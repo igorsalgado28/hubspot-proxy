@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HubSpot CRM Manager — Alura B2B</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(160deg,#fff5f5 0%,#f0f9ff 50%,#f0fff4 100%);min-height:100vh;padding:20px}
+.wrap{max-width:640px;margin:0 auto}
+.header{text-align:center;margin-bottom:24px}
+.header .emoji{font-size:48px;margin-bottom:4px}
+.header h1{font-size:24px;font-weight:900;background:linear-gradient(135deg,#FF6B6B,#4ECDC4,#45B7D1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.header p{color:#999;font-size:13px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.tab{padding:11px 6px;border-radius:12px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:700;font-size:12px;cursor:pointer;transition:all .2s;text-align:center}
+.tab.active{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.card{background:#fff;border-radius:20px;padding:28px;box-shadow:0 8px 40px rgba(0,0,0,.09)}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.card-header .icon{font-size:20px}
+.card-header h2{font-size:16px;font-weight:800;color:#333}
+.card-header small{font-size:11px;color:#aaa;display:block}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+label{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px}
+label span{color:#FF6B6B}
+input,select,textarea{padding:10px 14px;border-radius:10px;border:2px solid #e8e8e8;font-size:14px;outline:none;font-family:inherit;background:#fafafa;width:100%;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:#45B7D1}
+textarea{resize:vertical}
+.hint{font-size:11px;color:#aaa;margin-top:2px}
+.info-box{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
+.info-blue{background:#f0f8ff;border:2px solid #63b3ed;color:#2b6cb0}
+.info-green{background:#f0fff4;border:2px solid #68d391;color:#276749}
+.info-orange{background:#fff8f6;border:2px solid #e1705544}
+.btn{padding:12px 24px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:15px;width:100%;color:#fff;transition:all .2s}
+.btn:disabled{background:#ddd!important;color:#aaa;cursor:not-allowed}
+.btn-red{background:linear-gradient(135deg,#FF6B6B,#ee5a24)}
+.btn-teal{background:linear-gradient(135deg,#4ECDC4,#26d0ce)}
+.btn-blue{background:linear-gradient(135deg,#45B7D1,#0984e3)}
+.btn-green{background:linear-gradient(135deg,#96CEB4,#27ae60)}
+.btn-orange{background:linear-gradient(135deg,#e17055,#d35400)}
+.btn-export{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;font-weight:700;font-size:12px}
+.result-box{margin-top:16px;padding:16px;border-radius:12px;font-size:14px;line-height:1.7}
+.result-success{background:#f0fff4;border:2px solid #68d391}
+.result-error{background:#fff0f0;border:2px solid #fc8181}
+.result-info{background:#f0f8ff;border:2px solid #63b3ed}
+.result-title{font-weight:700;font-size:15px;margin-bottom:8px}
+.result-body{white-space:pre-wrap;color:#333}
+.result-body a{color:#0984e3;font-weight:600;word-break:break-all}
+.subtabs{display:grid;gap:8px;margin-bottom:16px}
+.subtab{padding:10px;border-radius:10px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.progress-bar{background:#f7f7f7;border-radius:10px;padding:12px;margin-top:12px}
+.progress-bar .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.progress-track{background:#e8e8e8;border-radius:8px;height:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;transition:width .3s}
+.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700}
+.table-wrap{overflow-x:auto;border-radius:12px;border:2px solid #e8e8e8}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:10px 12px;text-align:left;font-weight:700;color:#555;border-bottom:2px solid #e8e8e8;white-space:nowrap;background:#f7f7f7}
+td{padding:9px 12px;color:#555;border-bottom:1px solid #f0f0f0}
+tr:nth-child(even){background:#fafafa}
+.status-badge{border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px;white-space:nowrap}
+.file-drop{border:2px dashed #96CEB4;border-radius:12px;padding:20px;text-align:center;background:#f9fffe;cursor:pointer;position:relative}
+.file-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.file-drop .drop-icon{font-size:28px;margin-bottom:6px}
+.file-drop .drop-label{font-size:13px;font-weight:700}
+.file-drop .drop-hint{font-size:11px;color:#aaa;margin-top:4px}
+.footer{text-align:center;font-size:11px;color:#ccc;margin-top:16px}
+.config-box{background:#fff8f6;border:2px solid #e1705544;border-radius:12px;padding:14px;margin-bottom:16px}
+.config-title{font-size:12px;font-weight:700;color:#e17055;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.section{display:none}
+.section.active{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="emoji">🚀</div>
+    <h1>HubSpot CRM Manager</h1>
+    <p>Alura B2B • API Direta</p>
+  </div>
+
+  <div class="tabs" id="mainTabs">
+    <div class="tab active" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" data-tab="deal" onclick="switchTab('deal')">💼 Negócio</div>
+    <div class="tab" data-tab="company" onclick="switchTab('company')">🏢 Empresa</div>
+    <div class="tab" data-tab="contact" onclick="switchTab('contact')">👤 Contato</div>
+    <div class="tab" data-tab="validate" onclick="switchTab('validate')">🔍 Validar</div>
+  </div>
+
+  <div class="card">
+
+    <!-- ── NEGÓCIO ── -->
+    <div id="tab-deal" class="section active">
+      <div class="card-header"><span class="icon">💼</span><div><h2>Negócio</h2><small id="deal-sub-label">Negócio individual ou em massa</small></div></div>
+      <div class="subtabs" style="grid-template-columns:1fr 1fr">
+        <button class="subtab" id="st-deal-single" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" onclick="switchSub('deal','single')">💼 Individual</button>
+        <button class="subtab" id="st-deal-bulk" onclick="switchSub('deal','bulk')">📋 Em Massa</button>
+      </div>
+
+      <!-- Individual -->
+      <div id="deal-single">
+        <div class="form-group"><label>Nome do Negócio <span>*</span></label><input id="d-name" placeholder="Ex: Alura B2B - Tech Corp"/></div>
+        <div class="form-group"><label>Pipeline <span>*</span></label>
+          <select id="d-pipe" onchange="updateStage()">
+            <option value="11075625">Pré-Vendas - Inbound</option>
+            <option value="11066130">Vendas</option>
+            <option value="15079182">BDR - Outbound</option>
+            <option value="11066999">CS / ACM</option>
+            <option value="15000484">SDR - Scooto</option>
+            <option value="11847207">Parcerias</option>
+            <option value="663181378">Hunter - Vendas</option>
+            <option value="37990225">Self Trial</option>
+          </select>
+        </div>
+        <div class="info-box info-blue" id="d-stage-info">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
+        <div class="form-group"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">E-mail — deixe vazio para usar o padrão</span></div>
+        <div class="form-group"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: Tech Corp ou techcorp.com.br"/></div>
+        <div class="form-group"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="Ex: 25000"/></div>
+        <div class="form-group"><label>Observações</label><textarea id="d-obs" rows="4" placeholder="Notas relevantes..."></textarea></div>
+        <button class="btn btn-red" onclick="createDeal()">💼 Criar Negócio</button>
+        <div id="d-result"></div>
+      </div>
+
+      <!-- Em Massa -->
+      <div id="deal-bulk" style="display:none">
+        <div class="subtabs" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+          <button class="subtab" id="st-db-text" style="border-color:#e17055;background:#e1705518;color:#e17055" onclick="switchBulkMode('deal','text')">✏️ Digitar lista</button>
+          <button class="subtab" id="st-db-file" onclick="switchBulkMode('deal','file')">📎 Enviar arquivo</button>
+        </div>
+        <div class="config-box">
+          <div class="config-title">⚙️ Configurações Globais</div>
+          <div class="form-group"><label>Pipeline padrão</label>
+            <select id="db-pipe" onchange="updateBulkStage()">
+              <option value="11075625">Pré-Vendas - Inbound</option>
+              <option value="11066130">Vendas</option>
+              <option value="15079182">BDR - Outbound</option>
+              <option value="11066999">CS / ACM</option>
+              <option value="15000484">SDR - Scooto</option>
+              <option value="11847207">Parcerias</option>
+              <option value="663181378">Hunter - Vendas</option>
+              <option value="37990225">Self Trial</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Etapa do Negócio</label><select id="db-stage"></select></div>
+          <div class="form-group"><label>Proprietário padrão</label><input id="db-owner" placeholder="Ex: fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha no arquivo</span></div>
+        </div>
+        <div id="db-text-area">
+          <div class="form-group"><label>Lista de Empresas</label>
+            <textarea id="db-list" rows="7" style="font-family:monospace" placeholder="Uma por linha:&#10;Tech Corp&#10;Alura, alura.com.br&#10;Fiap, fiap.com.br, 11066130, vendedor@alura.com.br"></textarea>
+            <span class="hint">Colunas: Empresa, Domínio, Pipeline ID, Proprietário, Valor, Obs</span>
+          </div>
+        </div>
+        <div id="db-file-area" style="display:none">
+          <div class="file-drop" style="border-color:#e17055;background:#fff8f6">
+            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleBulkFile(event,'deal')"/>
+            <div class="drop-icon">📂</div>
+            <div class="drop-label" id="db-filename" style="color:#e17055">Clique ou arraste o arquivo aqui</div>
+            <div class="drop-hint">CSV, XLS ou XLSX • Col 1: Empresa • Col 2: Domínio</div>
+          </div>
+          <div id="db-file-info" style="display:none;margin-top:8px" class="info-box info-orange"></div>
+        </div>
+        <button class="btn btn-orange" style="margin-top:16px" onclick="runBulkDeals()">💼 Criar Negócios</button>
+        <div id="db-progress" style="display:none" class="progress-bar">
+          <div class="row"><span style="font-weight:600;color:#555">Criando negócios...</span><span id="db-prog-txt" style="color:#e17055;font-weight:700">0/0</span></div>
+          <div class="progress-track"><div class="progress-fill" id="db-prog-bar" style="background:linear-gradient(90deg,#e17055,#d35400);width:0%"></div></div>
+        </div>
+        <div id="db-results"></div>
+      </div>
+    </div>
+
+    <!-- ── EMPRESA ── -->
+    <div id="tab-company" class="section">
+      <div class="card-header"><span class="icon">🏢</span><div><h2>Empresa</h2><small>Registra empresa no HubSpot</small></div></div>
+      <div class="form-group"><label>Nome da Empresa <span>*</span></label><input id="c-name" placeholder="Ex: Tech Corp Ltda"/></div>
+      <div class="form-group"><label>Domínio</label><input id="c-domain" placeholder="Ex: techcorp.com.br"/></div>
+      <div class="form-group"><label>Segmento / Indústria</label><input id="c-seg" placeholder="Ex: Tecnologia, Saúde..."/></div>
+      <div class="form-group"><label>Nº de Funcionários</label><input id="c-emp" type="number" placeholder="Ex: 500"/></div>
+      <div class="grid2">
+        <div class="form-group"><label>Cidade</label><input id="c-city" placeholder="Ex: São Paulo"/></div>
+        <div class="form-group"><label>Estado</label><input id="c-state" placeholder="Ex: SP"/></div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="c-obs" rows="3" placeholder="Notas..."></textarea></div>
+      <button class="btn btn-teal" onclick="createCompany()">🏢 Criar Empresa</button>
+      <div id="c-result"></div>
+    </div>
+
+    <!-- ── CONTATO ── -->
+    <div id="tab-contact" class="section">
+      <div class="card-header"><span class="icon">👤</span><div><h2>Contato</h2><small>Adiciona novo contato ao CRM</small></div></div>
+      <div class="grid2">
+        <div class="form-group"><label>Nome <span>*</span></label><input id="ct-first" placeholder="Ex: João"/></div>
+        <div class="form-group"><label>Sobrenome</label><input id="ct-last" placeholder="Ex: Silva"/></div>
+      </div>
+      <div class="form-group"><label>E-mail <span>*</span></label><input id="ct-email" type="email" placeholder="joao@empresa.com.br"/></div>
+      <div class="form-group"><label>Telefone</label><input id="ct-phone" placeholder="+55 11 99999-0000"/></div>
+      <div class="form-group"><label>Cargo</label><input id="ct-role" placeholder="Ex: Diretor de TI"/></div>
+      <div class="form-group"><label>Empresa</label><input id="ct-company" placeholder="Nome da empresa"/></div>
+      <div class="form-group"><label>Origem do Lead</label><input id="ct-origin" placeholder="Ex: Inbound, Outbound..."/></div>
+      <div class="form-group"><label>Observações</label><textarea id="ct-obs" rows="3" placeholder="Notas..."></textarea></div>
+      <button class="btn btn-blue" onclick="createContact()">👤 Criar Contato</button>
+      <div id="ct-result"></div>
+    </div>
+
+    <!-- ── VALIDAR ── -->
+    <div id="tab-validate" class="section">
+      <div class="card-header"><span class="icon">🔍</span><div><h2>Validar Empresa</h2><small>Verifica aptidão para prospecção</small></div></div>
+      <div class="subtabs" style="grid-template-columns:1fr 1fr">
+        <button class="subtab" id="st-val-single" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchSub('validate','single')">🔍 Individual</button>
+        <button class="subtab" id="st-val-bulk" onclick="switchSub('validate','bulk')">📋 Em Massa</button>
+      </div>
+
+      <!-- Individual -->
+      <div id="validate-single">
+        <div class="info-box info-green">🔍 Informe o nome e/ou domínio da empresa para verificar a aptidão para prospecção.</div>
+        <div class="form-group"><label>Nome da Empresa <span>*</span></label><input id="v-name" placeholder="Ex: Tech Corp"/></div>
+        <div class="form-group"><label>Domínio (opcional)</label><input id="v-domain" placeholder="Ex: techcorp.com.br"/></div>
+        <button class="btn btn-green" onclick="validateSingle()">🔍 Validar</button>
+        <div id="v-result"></div>
+      </div>
+
+      <!-- Bulk -->
+      <div id="validate-bulk" style="display:none">
+        <div class="subtabs" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+          <button class="subtab" id="st-vb-text" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchBulkMode('validate','text')">✏️ Digitar lista</button>
+          <button class="subtab" id="st-vb-file" onclick="switchBulkMode('validate','file')">📎 Enviar arquivo</button>
+        </div>
+        <div id="vb-text-area">
+          <div class="form-group"><label>Lista de Empresas</label>
+            <textarea id="vb-list" rows="7" style="font-family:monospace" placeholder="Tech Corp&#10;Alura, alura.com.br&#10;Fiap, fiap.com.br"></textarea>
+            <span class="hint">Formato: Nome ou Nome, dominio.com.br</span>
+          </div>
+        </div>
+        <div id="vb-file-area" style="display:none">
+          <div class="file-drop">
+            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleBulkFile(event,'validate')"/>
+            <div class="drop-icon">📂</div>
+            <div class="drop-label" id="vb-filename">Clique ou arraste o arquivo aqui</div>
+            <div class="drop-hint">Col 1: Nome • Col 2: Domínio (opcional)</div>
+          </div>
+          <div id="vb-file-info" style="display:none;margin-top:8px" class="info-box info-green"></div>
+        </div>
+        <button class="btn btn-green" style="margin-top:16px" onclick="runBulkValidate()">🔍 Validar Empresas</button>
+        <div id="vb-progress" style="display:none" class="progress-bar">
+          <div class="row"><span style="font-weight:600;color:#555">Validando empresas...</span><span id="vb-prog-txt" style="color:#27ae60;font-weight:700">0/0</span></div>
+          <div class="progress-track"><div class="progress-fill" id="vb-prog-bar" style="background:linear-gradient(90deg,#96CEB4,#27ae60);width:0%"></div></div>
+        </div>
+        <div id="vb-results"></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">HubSpot API Direta • Account 21748317</div>
+</div>
+
+<script>
+const PROXY = 'https://hubspot-proxy-psi.vercel.app/api/hubspot';
+const ACCOUNT_ID = '21748317';
+const DEFAULT_OWNER = '1523113565';
+const PERSONAL_DOMAINS = ['gmail.com','googlemail.com','yahoo.com','yahoo.com.br','hotmail.com','hotmail.com.br','outlook.com','outlook.com.br','live.com','live.com.br','icloud.com','me.com','uol.com.br','bol.com.br','terra.com.br','ig.com.br','globo.com','oi.com.br'];
+const isPersonal = d => !d || PERSONAL_DOMAINS.some(p => d.toLowerCase().endsWith(p));
+
+const PIPELINES = {
+  '11075625':{label:'Pré-Vendas - Inbound', defStage:'32547660', defLabel:'Novo Contato (MQL)', stages:[{v:'32547660',l:'Novo Contato (MQL)'},{v:'32547661',l:'Validação'},{v:'965485473',l:'Conexão'},{v:'963329357',l:'Conectado'},{v:'32547662',l:'Qualificação (SAL)'},{v:'32547663',l:'Reunião agendada (SQL)'},{v:'32491602',l:'Perdido'}]},
+  '11066130':{label:'Vendas', defStage:'32538778', defLabel:'Map. Necessidade', stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'117817780',l:'Validação da Venda'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
+  '15079182':{label:'BDR - Outbound', defStage:'40175124', defLabel:'Leads Trabalhados', stages:[{v:'40175124',l:'Leads Trabalhados'},{v:'165340087',l:'1o FUP'},{v:'165340088',l:'2o FUP'},{v:'165340089',l:'3o FUP'},{v:'165340161',l:'Conexão realizada'},{v:'1289128831',l:'Qualificado'},{v:'165098277',l:'Reunião agendada (ganho)'},{v:'165098278',l:'Perdido'}]},
+  '11066999':{label:'CS / ACM', defStage:'32491595', defLabel:'Map. Necessidade', stages:[{v:'32491595',l:'Map. Necessidade'},{v:'32491596',l:'Solução'},{v:'32491597',l:'Negociação'},{v:'32491598',l:'Contratação'},{v:'123864600',l:'Validação da Venda'}]},
+  '15000484':{label:'SDR - Scooto', defStage:'39724041', defLabel:'Conexão realizada', stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'},{v:'39724042',l:'Reunião agendada'},{v:'39744339',l:'Ganho'},{v:'39744340',l:'Perdido'}]},
+  '11847207':{label:'Parcerias', defStage:'39724041', defLabel:'Conexão realizada', stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'}]},
+  '663181378':{label:'Hunter - Vendas', defStage:'32538778', defLabel:'Map. Necessidade', stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
+  '37990225':{label:'Self Trial', defStage:'49135418', defLabel:'Leads B2B', stages:[{v:'49135418',l:'Leads B2B'}]},
+};
+
+const hs = async (method, path, body) => {
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const res = await fetch(`${PROXY}/${cleanPath}`, {
+    method,
+    headers:{'Content-Type':'application/json'},
+    ...(body ? {body:JSON.stringify(body)} : {})
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+  return data;
+};
+
+const findOwner = async (emailOrName) => {
+  if (!emailOrName || !emailOrName.trim()) return DEFAULT_OWNER;
+  if (/^\d+$/.test(emailOrName)) return emailOrName;
+  try {
+    const data = await hs('GET', '/crm/v3/owners/?limit=100');
+    const found = (data.results||[]).find(o =>
+      o.email?.toLowerCase() === emailOrName.toLowerCase() ||
+      `${o.firstName} ${o.lastName}`.toLowerCase().includes(emailOrName.toLowerCase())
+    );
+    return found ? String(found.id) : DEFAULT_OWNER;
+  } catch { return DEFAULT_OWNER; }
+};
+
+const findCompany = async (name, domain) => {
+  if (!name && !domain) return null;
+  try {
+    const filters = domain && !isPersonal(domain)
+      ? [{propertyName:'domain',operator:'EQ',value:domain}]
+      : [{propertyName:'name',operator:'EQ',value:name}];
+    const data = await hs('POST', '/crm/v3/objects/companies/search', {filterGroups:[{filters}],properties:['name','domain'],limit:1});
+    return data.results?.[0]?.id || null;
+  } catch { return null; }
+};
+
+const findContactsByDomain = async (domain) => {
+  if (!domain || isPersonal(domain)) return [];
+  try {
+    const data = await hs('POST', '/crm/v3/objects/contacts/search', {
+      filterGroups:[{filters:[{propertyName:'email',operator:'CONTAINS_TOKEN',value:`@${domain}`}]}],
+      properties:['email'],limit:10
+    });
+    return (data.results||[]).map(c => c.id);
+  } catch { return []; }
+};
+
+const hsCreateDeal = async (props, companyId, contactIds) => {
+  const deal = await hs('POST', '/crm/v3/objects/deals', {properties:props});
+  const id = deal.id;
+  const assocs = [];
+  if (companyId) assocs.push(hs('PUT', `/crm/v4/objects/deals/${id}/associations/companies/${companyId}/deal_to_company`, {}));
+  (contactIds||[]).forEach(cid => assocs.push(hs('PUT', `/crm/v4/objects/deals/${id}/associations/contacts/${cid}/deal_to_contact`, {})));
+  await Promise.allSettled(assocs);
+  return id;
+};
+
+// Tab switching
+const TAB_COLORS = {deal:'#FF6B6B',company:'#4ECDC4',contact:'#45B7D1',validate:'#96CEB4'};
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.style.borderColor = '#e8e8e8'; t.style.background = '#fff'; t.style.color = '#999'; t.style.boxShadow = 'none';
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const el = document.querySelector(`[data-tab="${tab}"]`);
+  const c = TAB_COLORS[tab];
+  el.style.borderColor = c; el.style.background = c+'18'; el.style.color = c; el.style.boxShadow = `0 4px 12px ${c}33`;
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function switchSub(tab, sub) {
+  const color = tab==='deal' ? '#FF6B6B' : '#96CEB4';
+  const greenColor = '#27ae60';
+  const actualColor = tab==='validate' ? greenColor : color;
+  if (tab==='deal') {
+    ['single','bulk'].forEach(s => {
+      const btn = document.getElementById(`st-deal-${s}`);
+      btn.style.borderColor = s===sub ? color : '#e8e8e8';
+      btn.style.background = s===sub ? color+'18' : '#fff';
+      btn.style.color = s===sub ? color : '#999';
+    });
+    document.getElementById('deal-single').style.display = sub==='single' ? 'block' : 'none';
+    document.getElementById('deal-bulk').style.display = sub==='bulk' ? 'block' : 'none';
+  } else {
+    ['single','bulk'].forEach(s => {
+      const btn = document.getElementById(`st-val-${s}`);
+      btn.style.borderColor = s===sub ? actualColor : '#e8e8e8';
+      btn.style.background = s===sub ? actualColor+'18' : '#fff';
+      btn.style.color = s===sub ? actualColor : '#999';
+    });
+    document.getElementById('validate-single').style.display = sub==='single' ? 'block' : 'none';
+    document.getElementById('validate-bulk').style.display = sub==='bulk' ? 'block' : 'none';
+  }
+}
+
+function switchBulkMode(type, mode) {
+  const color = type==='deal' ? '#e17055' : '#96CEB4';
+  const activeColor = type==='validate' ? '#27ae60' : color;
+  ['text','file'].forEach(m => {
+    const key = type==='deal' ? `st-db-${m}` : `st-vb-${m}`;
+    const btn = document.getElementById(key);
+    btn.style.borderColor = m===mode ? activeColor : '#e8e8e8';
+    btn.style.background = m===mode ? activeColor+'18' : '#fff';
+    btn.style.color = m===mode ? activeColor : '#999';
+  });
+  const prefix = type==='deal' ? 'db' : 'vb';
+  document.getElementById(`${prefix}-text-area`).style.display = mode==='text' ? 'block' : 'none';
+  document.getElementById(`${prefix}-file-area`).style.display = mode==='file' ? 'block' : 'none';
+}
+
+// Stage updates
+function updateStage() {
+  const pipe = document.getElementById('d-pipe').value;
+  const p = PIPELINES[pipe];
+  document.getElementById('d-stage-label').textContent = p.defLabel;
+}
+
+function updateBulkStage() {
+  const pipe = document.getElementById('db-pipe').value;
+  const p = PIPELINES[pipe];
+  const sel = document.getElementById('db-stage');
+  sel.innerHTML = p.stages.map(s => `<option value="${s.v}"${s.v===p.defStage?' selected':''}>${s.v===p.defStage?'⭐ ':''}${s.l}${s.v===p.defStage?' (padrão)':''}</option>`).join('');
+}
+
+// Result rendering
+function showResult(id, type, title, message, link) {
+  const cls = type==='success'?'result-success':type==='error'?'result-error':'result-info';
+  const icon = type==='success'?'✅':type==='error'?'❌':'ℹ️';
+  const linkHtml = link ? `\n\n<a href="${link}" target="_blank">🔗 Abrir no HubSpot</a>` : '';
+  document.getElementById(id).innerHTML = `<div class="result-box ${cls}"><div class="result-title">${icon} ${title}</div><div class="result-body">${message}${linkHtml}</div></div>`;
+}
+
+function setLoading(btnSelector, loading) {
+  const btn = document.querySelector(btnSelector);
+  if (btn) { btn.disabled = loading; btn.textContent = loading ? '⏳ Processando...' : btn.getAttribute('data-label') || btn.textContent; }
+}
+
+// ── CREATE DEAL ──
+async function createDeal() {
+  const name = document.getElementById('d-name').value.trim();
+  if (!name) return showResult('d-result','error','Erro','Nome do negócio é obrigatório.');
+  const btn = document.querySelector('#tab-deal .btn-red'); btn.disabled=true; btn.textContent='⏳ Processando...';
+  try {
+    const pipe = document.getElementById('d-pipe').value;
+    const p = PIPELINES[pipe];
+    const owner = document.getElementById('d-owner').value.trim();
+    const company = document.getElementById('d-company').value.trim();
+    const domain = company.includes('.') ? company : '';
+    const ownerId = await findOwner(owner);
+    const companyId = await findCompany(company, domain);
+    const contactIds = domain && !isPersonal(domain) ? await findContactsByDomain(domain) : [];
+    const props = {dealname:name, pipeline:pipe, dealstage:p.defStage, status_do_negocio:'Aberto', hubspot_owner_id:ownerId};
+    const amount = document.getElementById('d-amount').value;
+    const obs = document.getElementById('d-obs').value;
+    if (amount) props.amount = amount;
+    if (obs) props.description = obs;
+    const id = await hsCreateDeal(props, companyId, contactIds);
+    const link = `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${id}`;
+    showResult('d-result','success','Negócio criado!',`Pipeline: ${p.label}\nEtapa: ${p.defLabel}`,link);
+  } catch(e) { showResult('d-result','error','Erro',e.message); }
+  btn.disabled=false; btn.textContent='💼 Criar Negócio';
+}
+
+// ── CREATE COMPANY ──
+async function createCompany() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) return showResult('c-result','error','Erro','Nome da empresa é obrigatório.');
+  const btn = document.querySelector('#tab-company .btn'); btn.disabled=true; btn.textContent='⏳ Processando...';
+  try {
+    const domain = document.getElementById('c-domain').value.trim();
+    const contactIds = domain && !isPersonal(domain) ? await findContactsByDomain(domain) : [];
+    const props = {name};
+    const seg=document.getElementById('c-seg').value,emp=document.getElementById('c-emp').value,city=document.getElementById('c-city').value,state=document.getElementById('c-state').value,obs=document.getElementById('c-obs').value;
+    if (domain) props.domain=domain; if (seg) props.industry=seg; if (emp) props.numberofemployees=emp;
+    if (city) props.city=city; if (state) props.state=state; if (obs) props.description=obs;
+    const company = await hs('POST', '/crm/v3/objects/companies', {properties:props});
+    const id = company.id;
+    await Promise.allSettled(contactIds.map(cid => hs('PUT', `/crm/v4/objects/companies/${id}/associations/contacts/${cid}/company_to_contact`, {})));
+    showResult('c-result','success','Empresa criada!', contactIds.length>0?`Associada a ${contactIds.length} contato(s) pelo domínio.`:'', `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-2/${id}`);
+  } catch(e) { showResult('c-result','error','Erro',e.message); }
+  btn.disabled=false; btn.textContent='🏢 Criar Empresa';
+}
+
+// ── CREATE CONTACT ──
+async function createContact() {
+  const first=document.getElementById('ct-first').value.trim(), email=document.getElementById('ct-email').value.trim();
+  if (!first||!email) return showResult('ct-result','error','Erro','Nome e e-mail são obrigatórios.');
+  const btn = document.querySelector('#tab-contact .btn'); btn.disabled=true; btn.textContent='⏳ Processando...';
+  try {
+    const domain = email.split('@')[1]||'';
+    const companyId = !isPersonal(domain) ? await findCompany(document.getElementById('ct-company').value.trim(), domain) : null;
+    const props = {firstname:first, email};
+    const last=document.getElementById('ct-last').value,phone=document.getElementById('ct-phone').value,role=document.getElementById('ct-role').value,company=document.getElementById('ct-company').value,origin=document.getElementById('ct-origin').value,obs=document.getElementById('ct-obs').value;
+    if (last) props.lastname=last; if (phone) props.phone=phone; if (role) props.jobtitle=role;
+    if (company) props.company=company; if (obs) props.description=obs;
+    const contact = await hs('POST', '/crm/v3/objects/contacts', {properties:props});
+    const id = contact.id;
+    if (companyId) await hs('PUT', `/crm/v4/objects/contacts/${id}/associations/companies/${companyId}/contact_to_company`, {});
+    showResult('ct-result','success','Contato criado!', companyId?'Associado à empresa pelo domínio.':'', `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${id}`);
+  } catch(e) { showResult('ct-result','error','Erro',e.message); }
+  btn.disabled=false; btn.textContent='👤 Criar Contato';
+}
+
+// ── VALIDATE SINGLE ──
+async function validateSingle() {
+  const name=document.getElementById('v-name').value.trim(), domain=document.getElementById('v-domain').value.trim();
+  if (!name) return showResult('v-result','error','Erro','Nome da empresa é obrigatório.');
+  const btn=document.querySelector('#validate-single .btn'); btn.disabled=true; btn.textContent='⏳ Validando...';
+  try {
+    const r = await doValidate(name, domain);
+    const type = r.verdict==='✅'?'success':r.verdict==='❌'?'error':'info';
+    showResult('v-result',type,`${r.verdict} ${r.status}`,r.reason,r.link||'');
+  } catch(e) { showResult('v-result','error','Erro',e.message); }
+  btn.disabled=false; btn.textContent='🔍 Validar';
+}
+
+async function doValidate(name, domain) {
+  const today = new Date(), d90 = new Date(today - 90*24*60*60*1000);
+  const filters = domain && !isPersonal(domain) ? [{propertyName:'domain',operator:'EQ',value:domain}] : [{propertyName:'name',operator:'EQ',value:name}];
+  const compData = await hs('POST', '/crm/v3/objects/companies/search', {filterGroups:[{filters}],properties:['name','domain'],limit:5});
+  if (!compData.results?.length) return {verdict:'✅',status:'Pode Prospectar',reason:'Empresa não encontrada no HubSpot. Sem histórico.',link:''};
+  const comp = compData.results[0];
+  const compId = comp.id;
+  const compLink = `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-2/${compId}`;
+  const dealsData = await hs('POST', '/crm/v3/objects/deals/search', {
+    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[parseInt(compId)]}]}],
+    properties:['dealname','pipeline','dealstage','hs_is_closed','hs_is_closed_lost','estagio_de_ciclo_de_vida___negocio','data_de_churn'],limit:50
+  });
+  const RELEVANT = ['11075625','11066130','15079182','11066999'];
+  const PIPE_NAMES = {'11075625':'Pré-Vendas - Inbound','11066130':'Vendas','15079182':'BDR - Outbound','11066999':'CS / ACM'};
+  for (const deal of dealsData.results||[]) {
+    const p=deal.properties, isClosed=p.hs_is_closed==='true', isLost=p.hs_is_closed_lost==='true';
+    const dLink=`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${deal.id}`;
+    if (!isClosed && !isLost && RELEVANT.includes(p.pipeline)) return {verdict:'❌',status:'Bloqueada',reason:`Negócio em aberto no pipeline ${PIPE_NAMES[p.pipeline]||p.pipeline}.`,link:dLink};
+    if (p.estagio_de_ciclo_de_vida___negocio==='cliente' && !isLost) return {verdict:'❌',status:'Bloqueada',reason:'Empresa identificada como cliente ativo.',link:dLink};
+    if (isLost && ['cliente','ex-cliente'].includes(p.estagio_de_ciclo_de_vida___negocio) && p.data_de_churn) {
+      const churn = new Date(p.data_de_churn);
+      if (churn >= d90) return {verdict:'❌',status:'Bloqueada',reason:`Churn recente em ${churn.toLocaleDateString('pt-BR')}. Aguardar 90 dias.`,link:dLink};
+      return {verdict:'✅',status:'Pode Prospectar',reason:`Ex-cliente com churn em ${churn.toLocaleDateString('pt-BR')}. Fora da janela de resfriamento.`,link:dLink};
+    }
+  }
+  const ctData = await hs('POST', '/crm/v3/objects/contacts/search', {
+    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[parseInt(compId)]}]}],
+    properties:['email','estagio_de_ciclo_de_vida___contato'],limit:10
+  });
+  for (const c of ctData.results||[]) {
+    if (c.properties.estagio_de_ciclo_de_vida___contato==='cliente') return {verdict:'❌',status:'Bloqueada',reason:'Contato associado marcado como cliente ativo.',link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${c.id}`};
+  }
+  return {verdict:'✅',status:'Pode Prospectar',reason:'Nenhum negócio em aberto, nenhum cliente ativo e nenhum churn recente.',link:compLink};
+}
+
+// ── BULK DEALS ──
+let bulkDealRows = [], bulkValidateRows = [];
+
+function handleBulkFile(event, type) {
+  const file = event.target.files[0]; if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const prefix = type==='deal' ? 'db' : 'vb';
+  document.getElementById(`${prefix}-filename`).textContent = file.name;
+  if (ext==='csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split('\n').filter(Boolean);
+      const rows = lines.slice(1).map(l => { const c=l.split(',').map(s=>s.replace(/"/g,'').trim()); return type==='deal'?{empresa:c[0]||'',dominio:c[1]||'',pipeline:c[2]||'',proprietario:c[3]||'',valor:c[4]||'',obs:c[5]||''}:{name:c[0]||'',domain:c[1]||''}; }).filter(r=>type==='deal'?r.empresa:r.name);
+      if (type==='deal') { bulkDealRows=rows; document.getElementById('db-file-info').style.display='block'; document.getElementById('db-file-info').textContent=`✅ ${rows.length} empresas carregadas`; }
+      else { bulkValidateRows=rows; document.getElementById('vb-file-info').style.display='block'; document.getElementById('vb-file-info').textContent=`✅ ${rows.length} empresas carregadas`; }
+    };
+    reader.readAsText(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb=XLSX.read(e.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], data=XLSX.utils.sheet_to_json(ws,{header:1});
+      const rows = data.slice(1).map(r => type==='deal'?{empresa:String(r[0]||'').trim(),dominio:String(r[1]||'').trim(),pipeline:String(r[2]||'').trim(),proprietario:String(r[3]||'').trim(),valor:String(r[4]||'').trim(),obs:String(r[5]||'').trim()}:{name:String(r[0]||'').trim(),domain:String(r[1]||'').trim()}).filter(r=>type==='deal'?r.empresa:r.name);
+      if (type==='deal') { bulkDealRows=rows; document.getElementById('db-file-info').style.display='block'; document.getElementById('db-file-info').textContent=`✅ ${rows.length} empresas carregadas`; }
+      else { bulkValidateRows=rows; document.getElementById('vb-file-info').style.display='block'; document.getElementById('vb-file-info').textContent=`✅ ${rows.length} empresas carregadas`; }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function parseBulkText(txt) {
+  return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const p=l.split(',').map(s=>s.trim()); return {empresa:p[0]||'',dominio:p[1]||'',pipeline:p[2]||'',proprietario:p[3]||'',valor:p[4]||'',obs:p[5]||''}; });
+}
+function parseValidateText(txt) {
+  return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const [name,domain]=l.split(',').map(s=>s.trim()); return {name:name||'',domain:domain||''}; });
+}
+
+function updateProgress(prefix, done, total) {
+  document.getElementById(`${prefix}-prog-txt`).textContent=`${done}/${total}`;
+  document.getElementById(`${prefix}-prog-bar`).style.width=`${(done/total)*100}%`;
+}
+
+function renderResultsTable(containerId, results, cols) {
+  const statusColor = s => s?.includes('✅')?'#27ae60':s?.includes('⚠️')?'#f39c12':'#e74c3c';
+  const chips = ['✅','❌','⚠️'].map(e => { const n=results.filter(r=>(r.status||'').startsWith(e)).length; return n>0?`<span class="chip" style="background:${statusColor(e+'x')}18;color:${statusColor(e+'x')};border:1px solid ${statusColor(e+'x')}44">${e} ${n}</span>`:''; }).join('');
+  const headers = cols.map(c=>`<th>${c.label}</th>`).join('');
+  const rows = results.map(r => `<tr>${cols.map(c => {
+    if (c.key==='status') return `<td><span class="status-badge" style="background:${statusColor(r.status)}18;color:${statusColor(r.status)};border:1px solid ${statusColor(r.status)}44">${r.status}</span></td>`;
+    if (c.key==='link') return `<td>${r.link?`<a href="${r.link}" target="_blank" style="color:#0984e3;font-weight:600;font-size:12px">🔗 Abrir</a>`:'—'}</td>`;
+    return `<td style="font-weight:${c.bold?600:400};color:${c.bold?'#333':'#555'}">${r[c.key]||'—'}</td>`;
+  }).join('')}</tr>`).join('');
+  const exportBtn = `<button class="btn-export" onclick="exportResults('${containerId}')">⬇️ Exportar XLSX</button>`;
+  document.getElementById(containerId).innerHTML = `
+    <div class="results-header"><span style="font-weight:700;font-size:14px;color:#333">Resultados — ${results.length}</span>${exportBtn}</div>
+    <div class="chips">${chips}</div>
+    <div class="table-wrap"><table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.getElementById(containerId)._results = results;
+  document.getElementById(containerId)._cols = cols;
+}
+
+function exportResults(containerId) {
+  const el=document.getElementById(containerId), results=el._results, cols=el._cols;
+  if (!results) return;
+  const data=[cols.map(c=>c.label),...results.map(r=>cols.map(c=>r[c.key]||''))];
+  const ws=XLSX.utils.aoa_to_sheet(data); ws['!cols']=cols.map(c=>({wch:c.w||20}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Resultados');
+  XLSX.writeFile(wb,`resultados_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function runBulkDeals() {
+  const textMode = document.getElementById('db-text-area').style.display!=='none';
+  const rows = textMode ? parseBulkText(document.getElementById('db-list').value) : bulkDealRows;
+  if (!rows.length) return alert('Nenhuma empresa para processar.');
+  const btn=document.querySelector('#deal-bulk .btn-orange'); btn.disabled=true; btn.textContent='⏳ Criando...';
+  const pipeId=document.getElementById('db-pipe').value, stageId=document.getElementById('db-stage').value, ownerBase=document.getElementById('db-owner').value.trim()||DEFAULT_OWNER;
+  const pipeInfo=PIPELINES[pipeId];
+  document.getElementById('db-progress').style.display='block';
+  updateProgress('db',0,rows.length);
+  const results=[];
+  for (let i=0;i<rows.length;i++) {
+    const r=rows[i];
+    const actualPipe=PIPELINES[r.pipeline]||pipeInfo;
+    try {
+      const ownerId=await findOwner(r.proprietario||ownerBase);
+      const companyId=await findCompany(r.empresa,r.dominio);
+      const contactIds=r.dominio&&!isPersonal(r.dominio)?await findContactsByDomain(r.dominio):[];
+      const props={dealname:r.empresa,pipeline:actualPipe.id||pipeId,dealstage:stageId,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
+      if (r.valor) props.amount=r.valor; if (r.obs) props.description=r.obs;
+      const id=await hsCreateDeal(props,companyId,contactIds);
+      results.push({empresa:r.empresa,dominio:r.dominio,pipeline:actualPipe.label,status:'✅ Criado',link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${id}`});
+    } catch(e) {
+      results.push({empresa:r.empresa,dominio:r.dominio,pipeline:actualPipe.label,status:'❌ Erro',link:'',motivo:e.message});
+    }
+    updateProgress('db',i+1,rows.length);
+    renderResultsTable('db-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'pipeline',label:'Pipeline',w:22},{key:'status',label:'Status',w:16},{key:'link',label:'Link',w:50}]);
+  }
+  btn.disabled=false; btn.textContent='💼 Criar Negócios';
+}
+
+async function runBulkValidate() {
+  const textMode=document.getElementById('vb-text-area').style.display!=='none';
+  const rows=textMode?parseValidateText(document.getElementById('vb-list').value):bulkValidateRows;
+  if (!rows.length) return alert('Nenhuma empresa para validar.');
+  const btn=document.querySelector('#validate-bulk .btn-green'); btn.disabled=true; btn.textContent='⏳ Validando...';
+  document.getElementById('vb-progress').style.display='block';
+  updateProgress('vb',0,rows.length);
+  const results=[];
+  for (let i=0;i<rows.length;i++) {
+    const {name,domain}=rows[i];
+    try {
+      const r=await doValidate(name,domain);
+      results.push({empresa:name,dominio:domain,status:`${r.verdict} ${r.status}`,motivo:r.reason,link:r.link||''});
+    } catch(e) {
+      results.push({empresa:name,dominio:domain,status:'❌ Erro',motivo:e.message,link:''});
+    }
+    updateProgress('vb',i+1,rows.length);
+    renderResultsTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo',w:60},{key:'link',label:'Link',w:50}]);
+  }
+  btn.disabled=false; btn.textContent='🔍 Validar Empresas';
+}
+
+// Init
+updateStage();
+updateBulkStage();
+</script>
+</body>
+</html>
