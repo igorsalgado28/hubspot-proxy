@@ -443,74 +443,67 @@ async function createContact() {
 async function doValidate(name, domain) {
   const today=new Date(), d90=new Date(today-90*24*60*60*1000), d30=new Date(today-30*24*60*60*1000);
 
-  if (!name.trim() && !domain.trim()) throw new Error('Informe o nome ou o domínio da empresa.');
+  // Limpa o domínio — remove @ se o usuário digitou @omnibees.com
+  const cleanDomain = (domain||'').replace(/^@/,'').trim().toLowerCase();
+  const cleanName = (name||'').trim();
 
-  // Busca empresas — prioriza domínio exato se fornecido
-  let companies=[], seen=new Set();
-  const searches=[];
+  if (!cleanName && !cleanDomain) throw new Error('Informe o nome ou o domínio da empresa.');
 
-  if (domain && !isPersonal(domain)) {
-    // Busca por domínio exato — mais precisa
-    searches.push(hs('POST','/crm/v3/objects/companies/search',{
-      filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:domain}]}],
-      properties:['name','domain'],limit:5
-    }));
-  }
+  // ── Busca empresa ──
+  let mainCompany = null;
 
-  if (name.trim()) {
-    // Busca por nome exato
-    searches.push(hs('POST','/crm/v3/objects/companies/search',{
-      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name}]}],
-      properties:['name','domain'],limit:3
-    }));
-    // Busca fuzzy por nome — limitada a 3 resultados para evitar falsos positivos
-    searches.push(hs('POST','/crm/v3/objects/companies/search',{
-      query:name, properties:['name','domain'], limit:3
-    }));
-  }
-
-  const res=await Promise.allSettled(searches);
-  for (const r of res) {
-    if (r.status==='fulfilled') {
-      for (const c of r.value.results||[]) {
-        if (!seen.has(c.id)){seen.add(c.id);companies.push(c);}
-      }
-    }
-  }
-
-  // Se buscou por domínio e achou, usa SÓ essas (mais precisas)
-  if (domain && !isPersonal(domain)) {
-    const byDomain = companies.filter(c=>(c.properties.domain||'').toLowerCase()===domain.toLowerCase());
-    if (byDomain.length>0) companies=byDomain;
-  }
-
-  // Filtra relevância quando buscou por nome
-  if (name.trim()) {
-    const nLow=name.toLowerCase();
-    companies=companies.filter(c=>{
-      const cName=(c.properties.name||'').toLowerCase();
-      const cDom=(c.properties.domain||'').toLowerCase();
-      if (domain && cDom===domain.toLowerCase()) return true;
-      if (cName===nLow) return true;
-      if (cName.includes(nLow)||nLow.includes(cName)) return true;
-      // Abreviações: só aceita se primeira palavra bate e tem 3+ chars
-      const fw=nLow.split(/\s+/)[0];
-      if (fw&&fw.length>=3&&cName.toLowerCase().startsWith(fw)) return true;
-      return false;
+  // 1. Prioridade máxima: domínio exato
+  if (cleanDomain && !isPersonal(cleanDomain)) {
+    const d = await hs('POST','/crm/v3/objects/companies/search',{
+      filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cleanDomain}]}],
+      properties:['name','domain'], limit:1
     });
+    if (d.results?.length) mainCompany = d.results[0];
   }
 
-  if (!companies.length) return {
+  // 2. Se não achou por domínio, tenta nome exato
+  if (!mainCompany && cleanName) {
+    const d = await hs('POST','/crm/v3/objects/companies/search',{
+      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cleanName}]}],
+      properties:['name','domain'], limit:1
+    });
+    if (d.results?.length) mainCompany = d.results[0];
+  }
+
+  // 3. Se ainda não achou, tenta nome em caixa alta (padrão HubSpot)
+  if (!mainCompany && cleanName) {
+    const d = await hs('POST','/crm/v3/objects/companies/search',{
+      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cleanName.toUpperCase()}]}],
+      properties:['name','domain'], limit:1
+    });
+    if (d.results?.length) mainCompany = d.results[0];
+  }
+
+  // 4. Último recurso: query fuzzy — mas valida relevância estritamente
+  if (!mainCompany && cleanName) {
+    const d = await hs('POST','/crm/v3/objects/companies/search',{
+      query:cleanName, properties:['name','domain'], limit:5
+    });
+    // Só aceita se o nome for substancialmente parecido
+    const match = (d.results||[]).find(c => {
+      const cName = (c.properties.name||'').toLowerCase();
+      const nLow = cleanName.toLowerCase();
+      return cName === nLow ||
+             cName.replace(/[^a-z0-9]/g,'') === nLow.replace(/[^a-z0-9]/g,'') ||
+             (cName.includes(nLow) && nLow.length >= 4) ||
+             (nLow.includes(cName) && cName.length >= 4);
+    });
+    if (match) mainCompany = match;
+  }
+
+  if (!mainCompany) return {
     can:true, companiesFound:[], deals:[], contacts:[], blocker:null,
     reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'
   };
 
-  // Usa apenas a empresa principal (primeira / mais relevante) para buscar negócios
-  // Evita explosão de dados de empresas variações
-  const mainCompany = companies[0];
   const mainId = parseInt(mainCompany.id);
 
-  // Busca negócios apenas da empresa principal
+  // ── Busca negócios APENAS desta empresa ──
   const dealsData = await hs('POST','/crm/v3/objects/deals/search',{
     filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
     properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate'],
@@ -518,61 +511,50 @@ async function doValidate(name, domain) {
   });
   const allDeals = dealsData.results||[];
 
-  // Busca contatos da empresa principal
+  // ── Busca contatos APENAS desta empresa ──
   let allContacts=[];
   try {
-    const ctData=await hs('POST','/crm/v3/objects/contacts/search',{
+    const ct = await hs('POST','/crm/v3/objects/contacts/search',{
       filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
-      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'],limit:20
+      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'], limit:20
     });
-    allContacts=ctData.results||[];
+    allContacts = ct.results||[];
   } catch(e){}
 
-  // Aplica regras — só nos 4 pipelines relevantes
+  // ── Aplica regras nos 4 pipelines relevantes ──
   let blocker=null;
-  const relevantDeals=allDeals.filter(d=>RELEVANT_PIPES.includes(d.properties.pipeline));
+  const relevantDeals = allDeals.filter(d=>RELEVANT_PIPES.includes(d.properties.pipeline));
 
   for (const deal of relevantDeals) {
-    const p=deal.properties;
-    const status=(p.status_do_negocio||'');
-    // Comparação case-insensitive com os valores reais do HubSpot
-    const statusLow=status.toLowerCase();
-    const ciclo=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
-    const pipe=PIPE_NAMES[p.pipeline]||p.pipeline;
-    const link=`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${deal.id}`;
+    const p = deal.properties;
+    const statusLow = (p.status_do_negocio||'').toLowerCase();
+    const cicloLow  = (p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
+    const pipe = PIPE_NAMES[p.pipeline]||p.pipeline;
+    const link = `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${deal.id}`;
 
     // Regra 1: Negócio em aberto → bloqueia imediatamente
     if (statusLow==='aberto') {
       blocker={rule:'aberto', msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`, link};
       break;
     }
-
-    // Regra 2: Cliente ativo (ciclo de vida = "Cliente", case-insensitive)
-    if (ciclo==='cliente' && statusLow!=='perdido') {
+    // Regra 2: Cliente ativo
+    if (cicloLow==='cliente' && statusLow!=='perdido') {
       blocker={rule:'cliente', msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`, link};
       break;
     }
-
-    // Regra 3: Ex-cliente com churn recente ≤ 90 dias
-    if (['ex-cliente','cliente'].includes(ciclo) && p.data_de_churn) {
+    // Regra 3: Ex-cliente com churn ≤ 90 dias
+    if (['ex-cliente','cliente'].includes(cicloLow) && p.data_de_churn) {
       const churn=new Date(p.data_de_churn);
-      if (churn>=d90) {
-        blocker={rule:'churn', msg:`Churn recente em ${churn.toLocaleDateString('pt-BR')} (menos de 90 dias). Aguardar janela.`, link};
-        break;
-      }
+      if (churn>=d90) { blocker={rule:'churn', msg:`Churn recente em ${churn.toLocaleDateString('pt-BR')} (menos de 90 dias).`, link}; break; }
     }
-
-    // Regra 4: Negócio perdido recente ≤ 30 dias
+    // Regra 4: Negócio perdido ≤ 30 dias
     if (statusLow==='perdido' && p.closedate) {
       const closed=new Date(p.closedate);
-      if (closed>=d30) {
-        blocker={rule:'perdido_recente', msg:`Negócio perdido em ${closed.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`, link};
-        break;
-      }
+      if (closed>=d30) { blocker={rule:'perdido_recente', msg:`Negócio perdido em ${closed.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`, link}; break; }
     }
   }
 
-  // Verifica contatos como cliente ativo
+  // Verifica contatos como cliente
   if (!blocker) {
     for (const c of allContacts) {
       if ((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente') {
@@ -582,7 +564,7 @@ async function doValidate(name, domain) {
     }
   }
 
-  return {can:!blocker, companiesFound:companies, deals:allDeals, contacts:allContacts, blocker, relevant:relevantDeals};
+  return {can:!blocker, companiesFound:[mainCompany], deals:allDeals, contacts:allContacts, blocker, relevant:relevantDeals};
 }
 
 // ── RENDER VALIDATE RESULT ──
