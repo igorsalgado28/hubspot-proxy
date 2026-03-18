@@ -222,8 +222,9 @@ tr:nth-child(even){background:#fafafa}
       </div>
       <div id="validate-single">
         <div class="info-box info-green">🔍 Informe o nome e/ou domínio da empresa para verificar a aptidão para prospecção.</div>
-        <div class="form-group"><label>Nome da Empresa <span>*</span></label><input id="v-name" placeholder="Ex: Omnibees"/></div>
-        <div class="form-group"><label>Domínio (opcional)</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
+        <div class="info-box" style="background:#fffbf0;border:2px solid #f9ca2466;color:#7d5a00;font-size:12px">💡 Preencha o nome, o domínio, ou ambos para validar.</div>
+        <div class="form-group"><label>Nome da Empresa</label><input id="v-name" placeholder="Ex: Omnibees"/></div>
+        <div class="form-group"><label>Domínio</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
         <button class="btn btn-green" id="v-btn" onclick="validateSingle()">🔍 Validar</button>
         <div id="v-result"></div>
       </div>
@@ -442,100 +443,146 @@ async function createContact() {
 async function doValidate(name, domain) {
   const today=new Date(), d90=new Date(today-90*24*60*60*1000), d30=new Date(today-30*24*60*60*1000);
 
-  // Busca ampla: domínio + nome exato + fuzzy
+  if (!name.trim() && !domain.trim()) throw new Error('Informe o nome ou o domínio da empresa.');
+
+  // Busca empresas — prioriza domínio exato se fornecido
   let companies=[], seen=new Set();
   const searches=[];
-  if (domain&&!isPersonal(domain)) searches.push(hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:domain}]}],properties:['name','domain'],limit:5}));
-  searches.push(hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name}]}],properties:['name','domain'],limit:5}));
-  searches.push(hs('POST','/crm/v3/objects/companies/search',{query:name,properties:['name','domain'],limit:8}));
+
+  if (domain && !isPersonal(domain)) {
+    // Busca por domínio exato — mais precisa
+    searches.push(hs('POST','/crm/v3/objects/companies/search',{
+      filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:domain}]}],
+      properties:['name','domain'],limit:5
+    }));
+  }
+
+  if (name.trim()) {
+    // Busca por nome exato
+    searches.push(hs('POST','/crm/v3/objects/companies/search',{
+      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name}]}],
+      properties:['name','domain'],limit:3
+    }));
+    // Busca fuzzy por nome — limitada a 3 resultados para evitar falsos positivos
+    searches.push(hs('POST','/crm/v3/objects/companies/search',{
+      query:name, properties:['name','domain'], limit:3
+    }));
+  }
 
   const res=await Promise.allSettled(searches);
   for (const r of res) {
-    if (r.status==='fulfilled') for (const c of r.value.results||[]) if (!seen.has(c.id)){seen.add(c.id);companies.push(c);}
+    if (r.status==='fulfilled') {
+      for (const c of r.value.results||[]) {
+        if (!seen.has(c.id)){seen.add(c.id);companies.push(c);}
+      }
+    }
   }
 
-  // Filtra relevância (evita falsos positivos)
-  const nLow=name.toLowerCase(), nWords=nLow.split(/\s+/).filter(w=>w.length>2);
-  companies=companies.filter(c=>{
-    const cName=(c.properties.name||'').toLowerCase();
-    const cDomain=(c.properties.domain||'').toLowerCase();
-    if (domain&&!isPersonal(domain)&&cDomain.includes(domain.toLowerCase())) return true;
-    if (cName===nLow) return true;
-    if (cName.includes(nLow)||nLow.includes(cName)) return true;
-    // Verifica se primeira palavra significativa bate (abreviações: XP vs XP Investimentos)
-    const firstWord=nWords[0];
-    if (firstWord&&firstWord.length>=2&&cName.startsWith(firstWord)) return true;
-    return false;
+  // Se buscou por domínio e achou, usa SÓ essas (mais precisas)
+  if (domain && !isPersonal(domain)) {
+    const byDomain = companies.filter(c=>(c.properties.domain||'').toLowerCase()===domain.toLowerCase());
+    if (byDomain.length>0) companies=byDomain;
+  }
+
+  // Filtra relevância quando buscou por nome
+  if (name.trim()) {
+    const nLow=name.toLowerCase();
+    companies=companies.filter(c=>{
+      const cName=(c.properties.name||'').toLowerCase();
+      const cDom=(c.properties.domain||'').toLowerCase();
+      if (domain && cDom===domain.toLowerCase()) return true;
+      if (cName===nLow) return true;
+      if (cName.includes(nLow)||nLow.includes(cName)) return true;
+      // Abreviações: só aceita se primeira palavra bate e tem 3+ chars
+      const fw=nLow.split(/\s+/)[0];
+      if (fw&&fw.length>=3&&cName.toLowerCase().startsWith(fw)) return true;
+      return false;
+    });
+  }
+
+  if (!companies.length) return {
+    can:true, companiesFound:[], deals:[], contacts:[], blocker:null,
+    reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'
+  };
+
+  // Usa apenas a empresa principal (primeira / mais relevante) para buscar negócios
+  // Evita explosão de dados de empresas variações
+  const mainCompany = companies[0];
+  const mainId = parseInt(mainCompany.id);
+
+  // Busca negócios apenas da empresa principal
+  const dealsData = await hs('POST','/crm/v3/objects/deals/search',{
+    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
+    properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate'],
+    limit:50
   });
+  const allDeals = dealsData.results||[];
 
-  if (!companies.length) return {can:true,companiesFound:[],deals:[],contacts:[],blocker:null,reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
-
-  // Busca negócios de todas as empresas
-  const companyIds=companies.map(c=>parseInt(c.id));
-  let allDeals=[], dSeen=new Set();
-  for (const cid of companyIds) {
-    try {
-      const d=await hs('POST','/crm/v3/objects/deals/search',{
-        filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[cid]}]}],
-        properties:['dealname','pipeline','dealstage','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate','hs_is_closed_lost'],
-        limit:50
-      });
-      for (const dl of d.results||[]) if (!dSeen.has(dl.id)){dSeen.add(dl.id);allDeals.push(dl);}
-    } catch(e){}
-  }
-
-  // Busca contatos
+  // Busca contatos da empresa principal
   let allContacts=[];
-  for (const cid of companyIds) {
-    try {
-      const ct=await hs('POST','/crm/v3/objects/contacts/search',{
-        filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[cid]}]}],
-        properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'],limit:10
-      });
-      allContacts.push(...(ct.results||[]));
-    } catch(e){}
-  }
+  try {
+    const ctData=await hs('POST','/crm/v3/objects/contacts/search',{
+      filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
+      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'],limit:20
+    });
+    allContacts=ctData.results||[];
+  } catch(e){}
 
-  // Aplica regras
+  // Aplica regras — só nos 4 pipelines relevantes
   let blocker=null;
   const relevantDeals=allDeals.filter(d=>RELEVANT_PIPES.includes(d.properties.pipeline));
 
   for (const deal of relevantDeals) {
     const p=deal.properties;
-    const status=(p.status_do_negocio||'').toLowerCase();
+    const status=(p.status_do_negocio||'');
+    // Comparação case-insensitive com os valores reais do HubSpot
+    const statusLow=status.toLowerCase();
     const ciclo=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
     const pipe=PIPE_NAMES[p.pipeline]||p.pipeline;
     const link=`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${deal.id}`;
 
-    // Regra 1: Negócio em aberto
-    if (status==='aberto') { blocker={rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link}; break; }
+    // Regra 1: Negócio em aberto → bloqueia imediatamente
+    if (statusLow==='aberto') {
+      blocker={rule:'aberto', msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`, link};
+      break;
+    }
 
-    // Regra 2: Cliente ativo
-    if (ciclo==='cliente'&&status!=='perdido') { blocker={rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link}; break; }
+    // Regra 2: Cliente ativo (ciclo de vida = "Cliente", case-insensitive)
+    if (ciclo==='cliente' && statusLow!=='perdido') {
+      blocker={rule:'cliente', msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`, link};
+      break;
+    }
 
-    // Regra 3: Ex-cliente com churn recente (≤ 90 dias)
-    if (['ex-cliente','cliente'].includes(ciclo)&&p.data_de_churn) {
+    // Regra 3: Ex-cliente com churn recente ≤ 90 dias
+    if (['ex-cliente','cliente'].includes(ciclo) && p.data_de_churn) {
       const churn=new Date(p.data_de_churn);
-      if (churn>=d90){blocker={rule:'churn',msg:`Churn recente em ${churn.toLocaleDateString('pt-BR')} (menos de 90 dias).`,link};break;}
+      if (churn>=d90) {
+        blocker={rule:'churn', msg:`Churn recente em ${churn.toLocaleDateString('pt-BR')} (menos de 90 dias). Aguardar janela.`, link};
+        break;
+      }
     }
 
-    // Regra 4: Negócio perdido recente (≤ 30 dias)
-    if (status==='perdido'&&p.closedate) {
+    // Regra 4: Negócio perdido recente ≤ 30 dias
+    if (statusLow==='perdido' && p.closedate) {
       const closed=new Date(p.closedate);
-      if (closed>=d30){blocker={rule:'perdido_recente',msg:`Negócio perdido recentemente em ${closed.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link};break;}
-    }
-  }
-
-  // Regra: contato como cliente ativo
-  if (!blocker) {
-    for (const c of allContacts) {
-      if ((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente') {
-        blocker={rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${c.id}`};break;
+      if (closed>=d30) {
+        blocker={rule:'perdido_recente', msg:`Negócio perdido em ${closed.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`, link};
+        break;
       }
     }
   }
 
-  return {can:!blocker,companiesFound:companies,deals:allDeals,contacts:allContacts,blocker,relevant:relevantDeals};
+  // Verifica contatos como cliente ativo
+  if (!blocker) {
+    for (const c of allContacts) {
+      if ((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente') {
+        blocker={rule:'contato_cliente', msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`, link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${c.id}`};
+        break;
+      }
+    }
+  }
+
+  return {can:!blocker, companiesFound:companies, deals:allDeals, contacts:allContacts, blocker, relevant:relevantDeals};
 }
 
 // ── RENDER VALIDATE RESULT ──
@@ -605,7 +652,7 @@ function renderValidateResult(containerId, name, domain, r) {
 // ── VALIDATE SINGLE ──
 async function validateSingle() {
   const name=document.getElementById('v-name').value.trim(), domain=document.getElementById('v-domain').value.trim();
-  if (!name) return showResult('v-result','error','Erro','Nome da empresa é obrigatório.');
+  if (!name && !domain) return showResult('v-result','error','Erro','Informe o nome ou o domínio da empresa.');
   document.getElementById('v-btn').disabled=true; document.getElementById('v-btn').textContent='⏳ Validando...';
   document.getElementById('v-result').innerHTML='<div class="v-loading">⏳ Vasculhando HubSpot...</div>';
   try {
