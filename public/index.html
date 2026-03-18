@@ -18,17 +18,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(160d
 .card-header{display:flex;align-items:center;gap:8px;margin-bottom:20px}
 .card-header h2{font-size:16px;font-weight:800;color:#333}
 .card-header small{font-size:11px;color:#aaa;display:block}
-.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
 label{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px}
 label span{color:#FF6B6B}
 input,select,textarea{padding:10px 14px;border-radius:10px;border:2px solid #e8e8e8;font-size:14px;outline:none;font-family:inherit;background:#fafafa;width:100%;transition:border .2s}
 input:focus,select:focus,textarea:focus{border-color:#45B7D1}
 textarea{resize:vertical}
 .hint{font-size:11px;color:#aaa;margin-top:2px}
-.info-box{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
-.info-blue{background:#f0f8ff;border:2px solid #63b3ed;color:#2b6cb0}
-.info-green{background:#f0fff4;border:2px solid #68d391;color:#276749}
-.info-orange{background:#fff8f6;border:2px solid #e1705566}
+.ib{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
+.ib-blue{background:#f0f8ff;border:2px solid #63b3ed;color:#2b6cb0}
+.ib-green{background:#f0fff4;border:2px solid #68d391;color:#276749}
+.ib-yellow{background:#fffbf0;border:2px solid #f9ca2466;color:#7d5a00}
+.ib-orange{background:#fff8f6;border:2px solid #e1705566}
 .btn{padding:12px 24px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:15px;width:100%;color:#fff;transition:all .2s}
 .btn:disabled{background:#ddd!important;color:#aaa;cursor:not-allowed}
 .btn-red{background:linear-gradient(135deg,#FF6B6B,#ee5a24)}
@@ -37,55 +38,49 @@ textarea{resize:vertical}
 .btn-green{background:linear-gradient(135deg,#96CEB4,#27ae60)}
 .btn-orange{background:linear-gradient(135deg,#e17055,#d35400)}
 .btn-export{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;font-weight:700;font-size:12px}
-.result-box{margin-top:16px;padding:16px;border-radius:12px;font-size:14px;line-height:1.7}
-.result-success{background:#f0fff4;border:2px solid #68d391}
-.result-error{background:#fff0f0;border:2px solid #fc8181}
-.result-info{background:#f0f8ff;border:2px solid #63b3ed}
-.result-title{font-weight:700;font-size:15px;margin-bottom:8px}
-.result-body{white-space:pre-wrap;color:#333}
-.result-body a{color:#0984e3;font-weight:600;word-break:break-all}
-.subtabs{display:grid;gap:8px;margin-bottom:16px}
-.subtab{padding:10px;border-radius:10px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.progress-bar{background:#f7f7f7;border-radius:10px;padding:12px;margin-top:12px}
-.progress-bar .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
-.progress-track{background:#e8e8e8;border-radius:8px;height:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:8px;transition:width .3s}
-.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.rb{margin-top:16px;padding:16px;border-radius:12px;font-size:14px;line-height:1.7}
+.rb-ok{background:#f0fff4;border:2px solid #68d391}
+.rb-err{background:#fff0f0;border:2px solid #fc8181}
+.rb-info{background:#f0f8ff;border:2px solid #63b3ed}
+.rb-title{font-weight:700;font-size:15px;margin-bottom:8px}
+.rb-body{white-space:pre-wrap;color:#333}
+.rb-body a{color:#0984e3;font-weight:600;word-break:break-all}
+.st{display:grid;gap:8px;margin-bottom:16px}
+.stb{padding:10px;border-radius:10px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pb{background:#f7f7f7;border-radius:10px;padding:12px;margin-top:12px}
+.pb .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.pb-track{background:#e8e8e8;border-radius:8px;height:8px;overflow:hidden}
+.pb-fill{height:100%;border-radius:8px;transition:width .3s}
+.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.chip{border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700}
-.table-wrap{overflow-x:auto;border-radius:12px;border:2px solid #e8e8e8}
+.tw{overflow-x:auto;border-radius:12px;border:2px solid #e8e8e8}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{padding:10px 12px;text-align:left;font-weight:700;color:#555;border-bottom:2px solid #e8e8e8;white-space:nowrap;background:#f7f7f7}
 td{padding:9px 12px;color:#555;border-bottom:1px solid #f0f0f0}
 tr:nth-child(even){background:#fafafa}
-.status-badge{border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px;white-space:nowrap}
-.file-drop{border:2px dashed #96CEB4;border-radius:12px;padding:20px;text-align:center;background:#f9fffe;cursor:pointer;position:relative}
-.file-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.file-drop .drop-icon{font-size:28px;margin-bottom:6px}
-.file-drop .drop-label{font-size:13px;font-weight:700}
-.file-drop .drop-hint{font-size:11px;color:#aaa;margin-top:4px}
+.badge{border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px;white-space:nowrap}
+.fd{border:2px dashed #96CEB4;border-radius:12px;padding:20px;text-align:center;background:#f9fffe;cursor:pointer;position:relative}
+.fd input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .footer{text-align:center;font-size:11px;color:#ccc;margin-top:16px}
-.config-box{background:#fff8f6;border:2px solid #e1705544;border-radius:12px;padding:14px;margin-bottom:16px}
-.config-title{font-size:12px;font-weight:700;color:#e17055;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-.section{display:none}
-.section.active{display:block}
-/* Validate output */
-.v-verdict{border-radius:16px;padding:20px;text-align:center;margin-bottom:16px}
-.v-verdict .icon{font-size:40px;margin-bottom:4px}
-.v-verdict .title{font-size:22px;font-weight:900}
-.v-verdict .blocker{margin-top:8px;font-size:14px;font-weight:600}
-.v-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.v-summary-card{background:#f7f7f7;border-radius:10px;padding:12px;text-align:center}
-.v-summary-card .num{font-size:22px;font-weight:800;color:#333}
-.v-summary-card .lbl{font-size:11px;color:#888;font-weight:600}
-.v-section-title{font-weight:700;font-size:13px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
-.v-company-item{background:#f7f7f7;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
-.v-deal-item{border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;border:1px solid #e8e8e8}
-.v-deal-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.v-deal-meta{color:#666;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-.v-link{color:#0984e3;font-weight:600;text-decoration:none}
-.v-loading{text-align:center;padding:30px;color:#888;font-size:14px}
+.cfg{background:#fff8f6;border:2px solid #e1705544;border-radius:12px;padding:14px;margin-bottom:16px}
+.cfg-title{font-size:12px;font-weight:700;color:#e17055;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.sec{display:none}.sec.active{display:block}
+.vv{border-radius:16px;padding:20px;text-align:center;margin-bottom:16px}
+.vv-icon{font-size:40px;margin-bottom:4px}
+.vv-title{font-size:22px;font-weight:900}
+.vv-msg{margin-top:8px;font-size:14px;font-weight:600}
+.vs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.vs-c{background:#f7f7f7;border-radius:10px;padding:12px;text-align:center}
+.vs-c .n{font-size:22px;font-weight:800;color:#333}
+.vs-c .l{font-size:11px;color:#888;font-weight:600}
+.vst{font-weight:700;font-size:13px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.vci{background:#f7f7f7;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.vdi{border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;border:1px solid #e8e8e8}
+.vdi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.vdi-meta{color:#666;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.vl{color:#0984e3;font-weight:600;text-decoration:none}
+.vloading{text-align:center;padding:30px;color:#888;font-size:14px}
 </style>
 </head>
 <body>
@@ -96,7 +91,7 @@ tr:nth-child(even){background:#fafafa}
     <p>Alura B2B • API Direta</p>
   </div>
 
-  <div class="tabs" id="mainTabs">
+  <div class="tabs">
     <div class="tab active" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" data-tab="deal" onclick="switchTab('deal')">💼 Negócio</div>
     <div class="tab" data-tab="company" onclick="switchTab('company')">🏢 Empresa</div>
     <div class="tab" data-tab="contact" onclick="switchTab('contact')">👤 Contato</div>
@@ -106,152 +101,144 @@ tr:nth-child(even){background:#fafafa}
   <div class="card">
 
     <!-- NEGÓCIO -->
-    <div id="tab-deal" class="section active">
-      <div class="card-header"><span style="font-size:20px">💼</span><div><h2>Negócio</h2><small>Negócio individual ou em massa</small></div></div>
-      <div class="subtabs" style="grid-template-columns:1fr 1fr">
-        <button class="subtab" id="st-deal-single" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" onclick="switchSub('deal','single')">💼 Individual</button>
-        <button class="subtab" id="st-deal-bulk" onclick="switchSub('deal','bulk')">📋 Em Massa</button>
+    <div id="tab-deal" class="sec active">
+      <div class="card-header"><span style="font-size:20px">💼</span><div><h2>Negócio</h2><small>Individual ou em massa</small></div></div>
+      <div class="st" style="grid-template-columns:1fr 1fr">
+        <button class="stb" id="st-deal-single" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" onclick="switchSub('deal','single')">💼 Individual</button>
+        <button class="stb" id="st-deal-bulk" onclick="switchSub('deal','bulk')">📋 Em Massa</button>
       </div>
       <div id="deal-single">
-        <div class="form-group"><label>Nome do Negócio <span>*</span></label><input id="d-name" placeholder="Ex: Alura B2B - Tech Corp"/></div>
-        <div class="form-group"><label>Pipeline <span>*</span></label>
+        <div class="fg"><label>Nome do Negócio <span>*</span></label><input id="d-name" placeholder="Ex: Alura B2B - Tech Corp"/></div>
+        <div class="fg"><label>Pipeline <span>*</span></label>
           <select id="d-pipe" onchange="updateStage()">
-            <option value="11075625">Pré-Vendas - Inbound</option>
-            <option value="11066130">Vendas</option>
-            <option value="15079182">BDR - Outbound</option>
-            <option value="11066999">CS / ACM</option>
-            <option value="15000484">SDR - Scooto</option>
-            <option value="11847207">Parcerias</option>
-            <option value="663181378">Hunter - Vendas</option>
-            <option value="37990225">Self Trial</option>
+            <option value="11075625">Pré-Vendas - Inbound</option><option value="11066130">Vendas</option>
+            <option value="15079182">BDR - Outbound</option><option value="11066999">CS / ACM</option>
+            <option value="15000484">SDR - Scooto</option><option value="11847207">Parcerias</option>
+            <option value="663181378">Hunter - Vendas</option><option value="37990225">Self Trial</option>
           </select>
         </div>
-        <div class="info-box info-blue">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
-        <div class="form-group"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">E-mail — deixe vazio para usar o padrão</span></div>
-        <div class="form-group"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: Tech Corp ou techcorp.com.br"/></div>
-        <div class="form-group"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="Ex: 25000"/></div>
-        <div class="form-group"><label>Observações</label><textarea id="d-obs" rows="3" placeholder="Notas relevantes..."></textarea></div>
-        <button class="btn btn-red" onclick="createDeal()">💼 Criar Negócio</button>
+        <div class="ib ib-blue">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
+        <div class="fg"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">Deixe vazio para usar o padrão</span></div>
+        <div class="fg"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: Tech Corp ou techcorp.com.br"/></div>
+        <div class="fg"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="25000"/></div>
+        <div class="fg"><label>Observações</label><textarea id="d-obs" rows="3" placeholder="Notas..."></textarea></div>
+        <button class="btn btn-red" id="d-btn" onclick="createDeal()">💼 Criar Negócio</button>
         <div id="d-result"></div>
       </div>
       <div id="deal-bulk" style="display:none">
-        <div class="subtabs" style="grid-template-columns:1fr 1fr">
-          <button class="subtab" id="st-db-text" style="border-color:#e17055;background:#e1705518;color:#e17055" onclick="switchBulkMode('deal','text')">✏️ Digitar lista</button>
-          <button class="subtab" id="st-db-file" onclick="switchBulkMode('deal','file')">📎 Enviar arquivo</button>
+        <div class="st" style="grid-template-columns:1fr 1fr">
+          <button class="stb" id="st-db-text" style="border-color:#e17055;background:#e1705518;color:#e17055" onclick="switchBM('deal','text')">✏️ Digitar lista</button>
+          <button class="stb" id="st-db-file" onclick="switchBM('deal','file')">📎 Enviar arquivo</button>
         </div>
-        <div class="config-box">
-          <div class="config-title">⚙️ Configurações Globais</div>
-          <div class="form-group"><label>Pipeline padrão</label>
+        <div class="cfg">
+          <div class="cfg-title">⚙️ Configurações Globais</div>
+          <div class="fg"><label>Pipeline padrão</label>
             <select id="db-pipe" onchange="updateBulkStage()">
-              <option value="11075625">Pré-Vendas - Inbound</option>
-              <option value="11066130">Vendas</option>
-              <option value="15079182">BDR - Outbound</option>
-              <option value="11066999">CS / ACM</option>
-              <option value="15000484">SDR - Scooto</option>
-              <option value="11847207">Parcerias</option>
-              <option value="663181378">Hunter - Vendas</option>
-              <option value="37990225">Self Trial</option>
+              <option value="11075625">Pré-Vendas - Inbound</option><option value="11066130">Vendas</option>
+              <option value="15079182">BDR - Outbound</option><option value="11066999">CS / ACM</option>
+              <option value="15000484">SDR - Scooto</option><option value="11847207">Parcerias</option>
+              <option value="663181378">Hunter - Vendas</option><option value="37990225">Self Trial</option>
             </select>
           </div>
-          <div class="form-group"><label>Etapa do Negócio</label><select id="db-stage"></select></div>
-          <div class="form-group"><label>Proprietário padrão</label><input id="db-owner" placeholder="Ex: fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha no arquivo</span></div>
+          <div class="fg"><label>Etapa</label><select id="db-stage"></select></div>
+          <div class="fg"><label>Proprietário padrão</label><input id="db-owner" placeholder="fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha</span></div>
         </div>
         <div id="db-text-area">
-          <div class="form-group"><label>Lista de Empresas</label>
+          <div class="fg"><label>Lista de Empresas</label>
             <textarea id="db-list" rows="6" style="font-family:monospace" placeholder="Uma por linha:&#10;Tech Corp&#10;Alura, alura.com.br&#10;Fiap, fiap.com.br, 11066130, vendedor@alura.com.br"></textarea>
             <span class="hint">Colunas: Empresa, Domínio, Pipeline ID, Proprietário, Valor, Obs</span>
           </div>
         </div>
         <div id="db-file-area" style="display:none">
-          <div class="file-drop" style="border-color:#e17055;background:#fff8f6">
-            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleBulkFile(event,'deal')"/>
-            <div class="drop-icon">📂</div>
-            <div class="drop-label" id="db-filename" style="color:#e17055">Clique ou arraste o arquivo aqui</div>
-            <div class="drop-hint">CSV, XLS ou XLSX</div>
+          <div class="fd" style="border-color:#e17055;background:#fff8f6">
+            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'deal')"/>
+            <div style="font-size:28px;margin-bottom:6px">📂</div>
+            <div id="db-fname" style="font-size:13px;font-weight:700;color:#e17055">Clique ou arraste aqui</div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px">CSV, XLS ou XLSX</div>
           </div>
-          <div id="db-file-info" style="display:none;margin-top:8px" class="info-box info-orange"></div>
+          <div id="db-finfo" style="display:none;margin-top:8px" class="ib ib-orange"></div>
         </div>
         <button class="btn btn-orange" style="margin-top:16px" id="db-btn" onclick="runBulkDeals()">💼 Criar Negócios</button>
-        <div id="db-progress" style="display:none" class="progress-bar">
-          <div class="row"><span style="font-weight:600;color:#555">Criando negócios...</span><span id="db-prog-txt" style="color:#e17055;font-weight:700">0/0</span></div>
-          <div class="progress-track"><div class="progress-fill" id="db-prog-bar" style="background:linear-gradient(90deg,#e17055,#d35400);width:0%"></div></div>
+        <div id="db-prog" style="display:none" class="pb">
+          <div class="row"><span style="font-weight:600;color:#555">Criando...</span><span id="db-ptxt" style="color:#e17055;font-weight:700">0/0</span></div>
+          <div class="pb-track"><div class="pb-fill" id="db-pbar" style="background:linear-gradient(90deg,#e17055,#d35400);width:0%"></div></div>
         </div>
         <div id="db-results" style="margin-top:12px"></div>
       </div>
     </div>
 
     <!-- EMPRESA -->
-    <div id="tab-company" class="section">
+    <div id="tab-company" class="sec">
       <div class="card-header"><span style="font-size:20px">🏢</span><div><h2>Empresa</h2><small>Registra empresa no HubSpot</small></div></div>
-      <div class="form-group"><label>Nome da Empresa <span>*</span></label><input id="c-name" placeholder="Ex: Tech Corp Ltda"/></div>
-      <div class="form-group"><label>Domínio</label><input id="c-domain" placeholder="Ex: techcorp.com.br"/></div>
-      <div class="form-group"><label>Segmento / Indústria</label><input id="c-seg" placeholder="Ex: Tecnologia, Saúde..."/></div>
-      <div class="form-group"><label>Nº de Funcionários</label><input id="c-emp" type="number" placeholder="Ex: 500"/></div>
-      <div class="grid2">
-        <div class="form-group"><label>Cidade</label><input id="c-city" placeholder="Ex: São Paulo"/></div>
-        <div class="form-group"><label>Estado</label><input id="c-state" placeholder="Ex: SP"/></div>
+      <div class="fg"><label>Nome <span>*</span></label><input id="c-name" placeholder="Ex: Tech Corp Ltda"/></div>
+      <div class="fg"><label>Domínio</label><input id="c-domain" placeholder="Ex: techcorp.com.br"/></div>
+      <div class="fg"><label>Segmento</label><input id="c-seg" placeholder="Ex: Tecnologia, Saúde..."/></div>
+      <div class="fg"><label>Nº de Funcionários</label><input id="c-emp" type="number" placeholder="500"/></div>
+      <div class="g2">
+        <div class="fg"><label>Cidade</label><input id="c-city" placeholder="São Paulo"/></div>
+        <div class="fg"><label>Estado</label><input id="c-state" placeholder="SP"/></div>
       </div>
-      <div class="form-group"><label>Observações</label><textarea id="c-obs" rows="3" placeholder="Notas..."></textarea></div>
+      <div class="fg"><label>Observações</label><textarea id="c-obs" rows="3" placeholder="Notas..."></textarea></div>
       <button class="btn btn-teal" id="c-btn" onclick="createCompany()">🏢 Criar Empresa</button>
       <div id="c-result"></div>
     </div>
 
     <!-- CONTATO -->
-    <div id="tab-contact" class="section">
-      <div class="card-header"><span style="font-size:20px">👤</span><div><h2>Contato</h2><small>Adiciona novo contato ao CRM</small></div></div>
-      <div class="grid2">
-        <div class="form-group"><label>Nome <span>*</span></label><input id="ct-first" placeholder="Ex: João"/></div>
-        <div class="form-group"><label>Sobrenome</label><input id="ct-last" placeholder="Ex: Silva"/></div>
+    <div id="tab-contact" class="sec">
+      <div class="card-header"><span style="font-size:20px">👤</span><div><h2>Contato</h2><small>Adiciona contato ao CRM</small></div></div>
+      <div class="g2">
+        <div class="fg"><label>Nome <span>*</span></label><input id="ct-first" placeholder="João"/></div>
+        <div class="fg"><label>Sobrenome</label><input id="ct-last" placeholder="Silva"/></div>
       </div>
-      <div class="form-group"><label>E-mail <span>*</span></label><input id="ct-email" type="email" placeholder="joao@empresa.com.br"/></div>
-      <div class="form-group"><label>Telefone</label><input id="ct-phone" placeholder="+55 11 99999-0000"/></div>
-      <div class="form-group"><label>Cargo</label><input id="ct-role" placeholder="Ex: Diretor de TI"/></div>
-      <div class="form-group"><label>Empresa</label><input id="ct-company" placeholder="Nome da empresa"/></div>
-      <div class="form-group"><label>Origem do Lead</label><input id="ct-origin" placeholder="Ex: Inbound, Outbound..."/></div>
-      <div class="form-group"><label>Observações</label><textarea id="ct-obs" rows="3" placeholder="Notas..."></textarea></div>
+      <div class="fg"><label>E-mail <span>*</span></label><input id="ct-email" type="email" placeholder="joao@empresa.com.br"/></div>
+      <div class="fg"><label>Telefone</label><input id="ct-phone" placeholder="+55 11 99999-0000"/></div>
+      <div class="fg"><label>Cargo</label><input id="ct-role" placeholder="Diretor de TI"/></div>
+      <div class="fg"><label>Empresa</label><input id="ct-company" placeholder="Nome da empresa"/></div>
+      <div class="fg"><label>Origem do Lead</label><input id="ct-origin" placeholder="Inbound, Outbound..."/></div>
+      <div class="fg"><label>Observações</label><textarea id="ct-obs" rows="3" placeholder="Notas..."></textarea></div>
       <button class="btn btn-blue" id="ct-btn" onclick="createContact()">👤 Criar Contato</button>
       <div id="ct-result"></div>
     </div>
 
     <!-- VALIDAR -->
-    <div id="tab-validate" class="section">
+    <div id="tab-validate" class="sec">
       <div class="card-header"><span style="font-size:20px">🔍</span><div><h2>Validar Empresa</h2><small>Verifica aptidão para prospecção</small></div></div>
-      <div class="subtabs" style="grid-template-columns:1fr 1fr">
-        <button class="subtab" id="st-val-single" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchSub('validate','single')">🔍 Individual</button>
-        <button class="subtab" id="st-val-bulk" onclick="switchSub('validate','bulk')">📋 Em Massa</button>
+      <div class="st" style="grid-template-columns:1fr 1fr">
+        <button class="stb" id="st-val-single" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchSub('validate','single')">🔍 Individual</button>
+        <button class="stb" id="st-val-bulk" onclick="switchSub('validate','bulk')">📋 Em Massa</button>
       </div>
       <div id="validate-single">
-        <div class="info-box info-green">🔍 Informe o nome e/ou domínio da empresa para verificar a aptidão para prospecção.</div>
-        <div class="info-box" style="background:#fffbf0;border:2px solid #f9ca2466;color:#7d5a00;font-size:12px">💡 Preencha o nome, o domínio, ou ambos para validar.</div>
-        <div class="form-group"><label>Nome da Empresa</label><input id="v-name" placeholder="Ex: Omnibees"/></div>
-        <div class="form-group"><label>Domínio</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
+        <div class="ib ib-green">🔍 Informe o nome, o domínio, ou ambos para validar.</div>
+        <div class="ib ib-yellow">💡 Você pode validar só pelo nome, só pelo domínio, ou pelos dois juntos.</div>
+        <div class="fg"><label>Nome da Empresa</label><input id="v-name" placeholder="Ex: Omnibees"/></div>
+        <div class="fg"><label>Domínio</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
         <button class="btn btn-green" id="v-btn" onclick="validateSingle()">🔍 Validar</button>
         <div id="v-result"></div>
       </div>
       <div id="validate-bulk" style="display:none">
-        <div class="subtabs" style="grid-template-columns:1fr 1fr">
-          <button class="subtab" id="st-vb-text" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchBulkMode('validate','text')">✏️ Digitar lista</button>
-          <button class="subtab" id="st-vb-file" onclick="switchBulkMode('validate','file')">📎 Enviar arquivo</button>
+        <div class="st" style="grid-template-columns:1fr 1fr">
+          <button class="stb" id="st-vb-text" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchBM('validate','text')">✏️ Digitar lista</button>
+          <button class="stb" id="st-vb-file" onclick="switchBM('validate','file')">📎 Enviar arquivo</button>
         </div>
         <div id="vb-text-area">
-          <div class="form-group"><label>Lista de Empresas</label>
-            <textarea id="vb-list" rows="6" style="font-family:monospace" placeholder="Omnibees&#10;Nubank, nubank.com.br&#10;Banrisul"></textarea>
-            <span class="hint">Formato: Nome ou Nome, dominio.com.br</span>
+          <div class="fg"><label>Lista de Empresas</label>
+            <textarea id="vb-list" rows="6" style="font-family:monospace" placeholder="Omnibees&#10;Nubank, nubank.com.br&#10;omnibees.com"></textarea>
+            <span class="hint">Formato: Nome | Nome, dominio.com | dominio.com</span>
           </div>
         </div>
         <div id="vb-file-area" style="display:none">
-          <div class="file-drop">
-            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleBulkFile(event,'validate')"/>
-            <div class="drop-icon">📂</div>
-            <div class="drop-label" id="vb-filename">Clique ou arraste o arquivo aqui</div>
-            <div class="drop-hint">Col 1: Nome • Col 2: Domínio (opcional)</div>
+          <div class="fd">
+            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'validate')"/>
+            <div style="font-size:28px;margin-bottom:6px">📂</div>
+            <div id="vb-fname" style="font-size:13px;font-weight:700;color:#27ae60">Clique ou arraste aqui</div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px">Col 1: Nome • Col 2: Domínio (opcional)</div>
           </div>
-          <div id="vb-file-info" style="display:none;margin-top:8px" class="info-box info-green"></div>
+          <div id="vb-finfo" style="display:none;margin-top:8px" class="ib ib-green"></div>
         </div>
         <button class="btn btn-green" style="margin-top:16px" id="vb-btn" onclick="runBulkValidate()">🔍 Validar Empresas</button>
-        <div id="vb-progress" style="display:none" class="progress-bar">
-          <div class="row"><span style="font-weight:600;color:#555">Validando empresas...</span><span id="vb-prog-txt" style="color:#27ae60;font-weight:700">0/0</span></div>
-          <div class="progress-track"><div class="progress-fill" id="vb-prog-bar" style="background:linear-gradient(90deg,#96CEB4,#27ae60);width:0%"></div></div>
+        <div id="vb-prog" style="display:none" class="pb">
+          <div class="row"><span style="font-weight:600;color:#555">Validando...</span><span id="vb-ptxt" style="color:#27ae60;font-weight:700">0/0</span></div>
+          <div class="pb-track"><div class="pb-fill" id="vb-pbar" style="background:linear-gradient(90deg,#96CEB4,#27ae60);width:0%"></div></div>
         </div>
         <div id="vb-results" style="margin-top:12px"></div>
       </div>
@@ -262,504 +249,362 @@ tr:nth-child(even){background:#fafafa}
 </div>
 
 <script>
-const PROXY = 'https://hubspot-proxy-psi.vercel.app/api/hubspot';
-const ACCOUNT_ID = '21748317';
-const DEFAULT_OWNER = '1523113565';
-const PERSONAL_DOMAINS = ['gmail.com','googlemail.com','yahoo.com','yahoo.com.br','hotmail.com','hotmail.com.br','outlook.com','outlook.com.br','live.com','live.com.br','icloud.com','me.com','uol.com.br','bol.com.br','terra.com.br','ig.com.br','globo.com','oi.com.br'];
-const isPersonal = d => !d || PERSONAL_DOMAINS.some(p => d.toLowerCase().endsWith(p));
+const PROXY='https://hubspot-proxy-psi.vercel.app/api/hubspot';
+const AID='21748317', DO='1523113565';
+const PD=['gmail.com','googlemail.com','yahoo.com','yahoo.com.br','hotmail.com','hotmail.com.br','outlook.com','outlook.com.br','live.com','live.com.br','icloud.com','me.com','uol.com.br','bol.com.br','terra.com.br','ig.com.br','globo.com','oi.com.br'];
+const isP=d=>!d||PD.some(p=>d.toLowerCase().endsWith(p));
+const PIPES={'11075625':{label:'Pré-Vendas - Inbound',ds:'32547660',dl:'Novo Contato (MQL)',stages:[{v:'32547660',l:'Novo Contato (MQL)'},{v:'32547661',l:'Validação'},{v:'965485473',l:'Conexão'},{v:'963329357',l:'Conectado'},{v:'32547662',l:'Qualificação (SAL)'},{v:'32547663',l:'Reunião agendada (SQL)'},{v:'32491602',l:'Perdido'}]},
+'11066130':{label:'Vendas',ds:'32538778',dl:'Map. Necessidade',stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'117817780',l:'Validação da Venda'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
+'15079182':{label:'BDR - Outbound',ds:'40185444',dl:'Leads Trabalhados',stages:[{v:'40185444',l:'Leads Trabalhados'},{v:'165340087',l:'1o FUP'},{v:'165340088',l:'2o FUP'},{v:'165340089',l:'3o FUP'},{v:'165340161',l:'Conexão realizada'},{v:'1289128831',l:'Qualificado'},{v:'165098277',l:'Reunião agendada (ganho)'},{v:'165098278',l:'Perdido'}]},
+'11066999':{label:'CS / ACM',ds:'32491595',dl:'Map. Necessidade',stages:[{v:'32491595',l:'Map. Necessidade'},{v:'32491596',l:'Solução'},{v:'32491597',l:'Negociação'},{v:'32491598',l:'Contratação'},{v:'123864600',l:'Validação da Venda'}]},
+'15000484':{label:'SDR - Scooto',ds:'39724041',dl:'Conexão realizada',stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'},{v:'39724042',l:'Reunião agendada'},{v:'39744339',l:'Ganho'},{v:'39744340',l:'Perdido'}]},
+'11847207':{label:'Parcerias',ds:'39724041',dl:'Conexão realizada',stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'}]},
+'663181378':{label:'Hunter - Vendas',ds:'32538778',dl:'Map. Necessidade',stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
+'37990225':{label:'Self Trial',ds:'49135418',dl:'Leads B2B',stages:[{v:'49135418',l:'Leads B2B'}]}};
+const RP=['11075625','11066130','15079182','11066999'];
+const PN={'11075625':'Pré-Vendas - Inbound','11066130':'Vendas','15079182':'BDR - Outbound','11066999':'CS / ACM'};
 
-const PIPELINES = {
-  '11075625':{label:'Pré-Vendas - Inbound',defStage:'32547660',defLabel:'Novo Contato (MQL)',stages:[{v:'32547660',l:'Novo Contato (MQL)'},{v:'32547661',l:'Validação'},{v:'965485473',l:'Conexão'},{v:'963329357',l:'Conectado'},{v:'32547662',l:'Qualificação (SAL)'},{v:'32547663',l:'Reunião agendada (SQL)'},{v:'32491602',l:'Perdido'}]},
-  '11066130':{label:'Vendas',defStage:'32538778',defLabel:'Map. Necessidade',stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'117817780',l:'Validação da Venda'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
-  '15079182':{label:'BDR - Outbound',defStage:'40185444',defLabel:'Leads Trabalhados',stages:[{v:'40185444',l:'Leads Trabalhados'},{v:'165340087',l:'1o FUP'},{v:'165340088',l:'2o FUP'},{v:'165340089',l:'3o FUP'},{v:'165340161',l:'Conexão realizada'},{v:'1289128831',l:'Qualificado'},{v:'165098277',l:'Reunião agendada (ganho)'},{v:'165098278',l:'Perdido'}]},
-  '11066999':{label:'CS / ACM',defStage:'32491595',defLabel:'Map. Necessidade',stages:[{v:'32491595',l:'Map. Necessidade'},{v:'32491596',l:'Solução'},{v:'32491597',l:'Negociação'},{v:'32491598',l:'Contratação'},{v:'123864600',l:'Validação da Venda'}]},
-  '15000484':{label:'SDR - Scooto',defStage:'39724041',defLabel:'Conexão realizada',stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'},{v:'39724042',l:'Reunião agendada'},{v:'39744339',l:'Ganho'},{v:'39744340',l:'Perdido'}]},
-  '11847207':{label:'Parcerias',defStage:'39724041',defLabel:'Conexão realizada',stages:[{v:'39724041',l:'Conexão realizada'},{v:'39724040',l:'Qualificado'}]},
-  '663181378':{label:'Hunter - Vendas',defStage:'32538778',defLabel:'Map. Necessidade',stages:[{v:'32538778',l:'Map. Necessidade'},{v:'32538779',l:'Solução'},{v:'32538780',l:'Negociação'},{v:'32538781',l:'Contratação'},{v:'32538782',l:'Ganho'},{v:'32538783',l:'Perdido'}]},
-  '37990225':{label:'Self Trial',defStage:'49135418',defLabel:'Leads B2B',stages:[{v:'49135418',l:'Leads B2B'}]},
+const hs=async(m,path,body)=>{
+  const c=path.startsWith('/')?path.slice(1):path;
+  const r=await fetch(`${PROXY}?path=${c}`,{method:m,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.message||d.error||`HTTP ${r.status}`);
+  return d;
+};
+const findOwner=async v=>{
+  if(!v||!v.trim())return DO;
+  if(/^\d+$/.test(v))return v;
+  try{const d=await hs('GET','/crm/v3/owners/?limit=100');const f=(d.results||[]).find(o=>o.email?.toLowerCase()===v.toLowerCase()||`${o.firstName} ${o.lastName}`.toLowerCase().includes(v.toLowerCase()));return f?String(f.id):DO;}catch{return DO;}
+};
+const findCo=async(name,domain)=>{
+  if(!name&&!domain)return null;
+  try{const f=domain&&!isP(domain)?[{propertyName:'domain',operator:'EQ',value:domain}]:[{propertyName:'name',operator:'EQ',value:name}];
+  const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:f}],properties:['name','domain'],limit:1});return d.results?.[0]?.id||null;}catch{return null;}
+};
+const findCtsByDomain=async domain=>{
+  if(!domain||isP(domain))return[];
+  try{const d=await hs('POST','/crm/v3/objects/contacts/search',{filterGroups:[{filters:[{propertyName:'email',operator:'CONTAINS_TOKEN',value:`@${domain}`}]}],properties:['email'],limit:10});return(d.results||[]).map(c=>c.id);}catch{return[];}
+};
+const mkDeal=async(props,coId,ctIds)=>{
+  const deal=await hs('POST','/crm/v3/objects/deals',{properties:props});
+  const id=deal.id;
+  const as=[];
+  if(coId)as.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/companies/${coId}/deal_to_company`,{}));
+  (ctIds||[]).forEach(cid=>as.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/contacts/${cid}/deal_to_contact`,{})));
+  await Promise.allSettled(as);return id;
 };
 
-const RELEVANT_PIPES = ['11075625','11066130','15079182','11066999'];
-const PIPE_NAMES = {'11075625':'Pré-Vendas - Inbound','11066130':'Vendas','15079182':'BDR - Outbound','11066999':'CS / ACM'};
-
-// ── API ──
-const hs = async (method, path, body) => {
-  const clean = path.startsWith('/') ? path.slice(1) : path;
-  const res = await fetch(`${PROXY}?path=${clean}`, {
-    method,
-    headers: {'Content-Type':'application/json'},
-    ...(body ? {body: JSON.stringify(body)} : {})
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
-  return data;
-};
-
-const findOwner = async (v) => {
-  if (!v || !v.trim()) return DEFAULT_OWNER;
-  if (/^\d+$/.test(v)) return v;
-  try {
-    const d = await hs('GET', '/crm/v3/owners/?limit=100');
-    const f = (d.results||[]).find(o => o.email?.toLowerCase()===v.toLowerCase() || `${o.firstName} ${o.lastName}`.toLowerCase().includes(v.toLowerCase()));
-    return f ? String(f.id) : DEFAULT_OWNER;
-  } catch { return DEFAULT_OWNER; }
-};
-
-const findCompany = async (name, domain) => {
-  if (!name && !domain) return null;
-  try {
-    const filters = domain && !isPersonal(domain) ? [{propertyName:'domain',operator:'EQ',value:domain}] : [{propertyName:'name',operator:'EQ',value:name}];
-    const d = await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters}],properties:['name','domain'],limit:1});
-    return d.results?.[0]?.id || null;
-  } catch { return null; }
-};
-
-const findContactsByDomain = async (domain) => {
-  if (!domain || isPersonal(domain)) return [];
-  try {
-    const d = await hs('POST','/crm/v3/objects/contacts/search',{filterGroups:[{filters:[{propertyName:'email',operator:'CONTAINS_TOKEN',value:`@${domain}`}]}],properties:['email'],limit:10});
-    return (d.results||[]).map(c=>c.id);
-  } catch { return []; }
-};
-
-const hsCreateDeal = async (props, companyId, contactIds) => {
-  const deal = await hs('POST','/crm/v3/objects/deals',{properties:props});
-  const id = deal.id;
-  const assocs = [];
-  if (companyId) assocs.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/companies/${companyId}/deal_to_company`,{}));
-  (contactIds||[]).forEach(cid => assocs.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/contacts/${cid}/deal_to_contact`,{})));
-  await Promise.allSettled(assocs);
-  return id;
-};
-
-// ── TABS ──
-const TAB_COLORS = {deal:'#FF6B6B',company:'#4ECDC4',contact:'#45B7D1',validate:'#96CEB4'};
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t=>{t.style.borderColor='#e8e8e8';t.style.background='#fff';t.style.color='#999';t.style.boxShadow='none';});
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  const el=document.querySelector(`[data-tab="${tab}"]`), c=TAB_COLORS[tab];
-  el.style.borderColor=c; el.style.background=c+'18'; el.style.color=c; el.style.boxShadow=`0 4px 12px ${c}33`;
-  document.getElementById(`tab-${tab}`).classList.add('active');
+// ── UI helpers ──
+const TC={deal:'#FF6B6B',company:'#4ECDC4',contact:'#45B7D1',validate:'#96CEB4'};
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(x=>{x.style.borderColor='#e8e8e8';x.style.background='#fff';x.style.color='#999';x.style.boxShadow='none';});
+  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));
+  const el=document.querySelector(`[data-tab="${t}"]`),c=TC[t];
+  el.style.borderColor=c;el.style.background=c+'18';el.style.color=c;el.style.boxShadow=`0 4px 12px ${c}33`;
+  document.getElementById(`tab-${t}`).classList.add('active');
 }
-function switchSub(tab, sub) {
-  const c = tab==='deal'?'#FF6B6B':'#27ae60';
-  if (tab==='deal') {
+function switchSub(tab,sub){
+  const c=tab==='deal'?'#FF6B6B':'#27ae60';
+  if(tab==='deal'){
     ['single','bulk'].forEach(s=>{const b=document.getElementById(`st-deal-${s}`);b.style.borderColor=s===sub?c:'#e8e8e8';b.style.background=s===sub?c+'18':'#fff';b.style.color=s===sub?c:'#999';});
     document.getElementById('deal-single').style.display=sub==='single'?'block':'none';
     document.getElementById('deal-bulk').style.display=sub==='bulk'?'block':'none';
-  } else {
+  }else{
     ['single','bulk'].forEach(s=>{const b=document.getElementById(`st-val-${s}`);b.style.borderColor=s===sub?c:'#e8e8e8';b.style.background=s===sub?c+'18':'#fff';b.style.color=s===sub?c:'#999';});
     document.getElementById('validate-single').style.display=sub==='single'?'block':'none';
     document.getElementById('validate-bulk').style.display=sub==='bulk'?'block':'none';
   }
 }
-function switchBulkMode(type, mode) {
+function switchBM(type,mode){
   const c=type==='deal'?'#e17055':'#27ae60';
   ['text','file'].forEach(m=>{const k=type==='deal'?`st-db-${m}`:`st-vb-${m}`;const b=document.getElementById(k);b.style.borderColor=m===mode?c:'#e8e8e8';b.style.background=m===mode?c+'18':'#fff';b.style.color=m===mode?c:'#999';});
   const p=type==='deal'?'db':'vb';
   document.getElementById(`${p}-text-area`).style.display=mode==='text'?'block':'none';
   document.getElementById(`${p}-file-area`).style.display=mode==='file'?'block':'none';
 }
-function updateStage() {
-  const p=PIPELINES[document.getElementById('d-pipe').value];
-  document.getElementById('d-stage-label').textContent=p.defLabel;
+function updateStage(){const p=PIPES[document.getElementById('d-pipe').value];document.getElementById('d-stage-label').textContent=p.dl;}
+function updateBulkStage(){const p=PIPES[document.getElementById('db-pipe').value];document.getElementById('db-stage').innerHTML=p.stages.map(s=>`<option value="${s.v}"${s.v===p.ds?' selected':''}>${s.v===p.ds?'⭐ ':''}${s.l}${s.v===p.ds?' (padrão)':''}</option>`).join('');}
+function showR(id,type,title,msg,link){
+  const cl=type==='success'?'rb-ok':type==='error'?'rb-err':'rb-info';
+  const ic=type==='success'?'✅':type==='error'?'❌':'ℹ️';
+  const lh=link?`\n\n<a class="vl" href="${link}" target="_blank">🔗 Abrir no HubSpot</a>`:'';
+  document.getElementById(id).innerHTML=`<div class="rb ${cl}"><div class="rb-title">${ic} ${title}</div><div class="rb-body">${msg}${lh}</div></div>`;
 }
-function updateBulkStage() {
-  const p=PIPELINES[document.getElementById('db-pipe').value];
-  document.getElementById('db-stage').innerHTML=p.stages.map(s=>`<option value="${s.v}"${s.v===p.defStage?' selected':''}>${s.v===p.defStage?'⭐ ':''}${s.l}${s.v===p.defStage?' (padrão)':''}</option>`).join('');
-}
-function showResult(id,type,title,msg,link) {
-  const cls=type==='success'?'result-success':type==='error'?'result-error':'result-info';
-  const icon=type==='success'?'✅':type==='error'?'❌':'ℹ️';
-  const lh=link?`\n\n<a class="v-link" href="${link}" target="_blank">🔗 Abrir no HubSpot</a>`:'';
-  document.getElementById(id).innerHTML=`<div class="result-box ${cls}"><div class="result-title">${icon} ${title}</div><div class="result-body">${msg}${lh}</div></div>`;
-}
-function setBtn(id,loading,label) {
-  const b=document.getElementById(id); if(!b)return;
-  b.disabled=loading; b.textContent=loading?'⏳ Processando...':label;
-}
+function setB(id,loading,label){const b=document.getElementById(id);if(!b)return;b.disabled=loading;b.textContent=loading?'⏳ Processando...':label;}
 
 // ── CREATE DEAL ──
-async function createDeal() {
+async function createDeal(){
   const name=document.getElementById('d-name').value.trim();
-  if (!name) return showResult('d-result','error','Erro','Nome do negócio é obrigatório.');
-  setBtn(null,true,''); document.querySelector('#deal-single .btn-red').disabled=true; document.querySelector('#deal-single .btn-red').textContent='⏳ Criando...';
-  try {
-    const pipe=document.getElementById('d-pipe').value, p=PIPELINES[pipe];
-    const owner=document.getElementById('d-owner').value.trim();
-    const company=document.getElementById('d-company').value.trim();
+  if(!name)return showR('d-result','error','Erro','Nome do negócio é obrigatório.');
+  setB('d-btn',true,'');
+  try{
+    const pipe=document.getElementById('d-pipe').value,p=PIPES[pipe];
+    const owner=document.getElementById('d-owner').value.trim(),company=document.getElementById('d-company').value.trim();
     const domain=company.includes('.')?company:'';
-    const ownerId=await findOwner(owner);
-    const companyId=await findCompany(company,domain);
-    const contactIds=domain&&!isPersonal(domain)?await findContactsByDomain(domain):[];
-    const props={dealname:name,pipeline:pipe,dealstage:p.defStage,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
-    const amount=document.getElementById('d-amount').value, obs=document.getElementById('d-obs').value;
-    if (amount) props.amount=amount; if (obs) props.description=obs;
-    const id=await hsCreateDeal(props,companyId,contactIds);
-    showResult('d-result','success','Negócio criado!',`Pipeline: ${p.label}\nEtapa: ${p.defLabel}`,`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${id}`);
-  } catch(e){showResult('d-result','error','Erro',e.message);}
-  document.querySelector('#deal-single .btn-red').disabled=false; document.querySelector('#deal-single .btn-red').textContent='💼 Criar Negócio';
+    const ownerId=await findOwner(owner),coId=await findCo(company,domain);
+    const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
+    const props={dealname:name,pipeline:pipe,dealstage:p.ds,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
+    const amt=document.getElementById('d-amount').value,obs=document.getElementById('d-obs').value;
+    if(amt)props.amount=amt;if(obs)props.description=obs;
+    const id=await mkDeal(props,coId,ctIds);
+    showR('d-result','success','Negócio criado!',`Pipeline: ${p.label}\nEtapa: ${p.dl}`,`https://app.hubspot.com/contacts/${AID}/record/0-3/${id}`);
+  }catch(e){showR('d-result','error','Erro',e.message);}
+  setB('d-btn',false,'💼 Criar Negócio');
 }
 
 // ── CREATE COMPANY ──
-async function createCompany() {
+async function createCompany(){
   const name=document.getElementById('c-name').value.trim();
-  if (!name) return showResult('c-result','error','Erro','Nome da empresa é obrigatório.');
-  document.getElementById('c-btn').disabled=true; document.getElementById('c-btn').textContent='⏳ Criando...';
-  try {
+  if(!name)return showR('c-result','error','Erro','Nome da empresa é obrigatório.');
+  setB('c-btn',true,'');
+  try{
     const domain=document.getElementById('c-domain').value.trim();
-    const contactIds=domain&&!isPersonal(domain)?await findContactsByDomain(domain):[];
+    const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
     const props={name};
     const seg=document.getElementById('c-seg').value,emp=document.getElementById('c-emp').value,city=document.getElementById('c-city').value,state=document.getElementById('c-state').value,obs=document.getElementById('c-obs').value;
     if(domain)props.domain=domain;if(seg)props.industry=seg;if(emp)props.numberofemployees=emp;if(city)props.city=city;if(state)props.state=state;if(obs)props.description=obs;
-    const co=await hs('POST','/crm/v3/objects/companies',{properties:props});
-    const id=co.id;
-    await Promise.allSettled(contactIds.map(cid=>hs('PUT',`/crm/v4/objects/companies/${id}/associations/contacts/${cid}/company_to_contact`,{})));
-    showResult('c-result','success','Empresa criada!',contactIds.length>0?`Associada a ${contactIds.length} contato(s).`:'',`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-2/${id}`);
-  }catch(e){showResult('c-result','error','Erro',e.message);}
-  document.getElementById('c-btn').disabled=false; document.getElementById('c-btn').textContent='🏢 Criar Empresa';
+    const co=await hs('POST','/crm/v3/objects/companies',{properties:props});const id=co.id;
+    await Promise.allSettled(ctIds.map(cid=>hs('PUT',`/crm/v4/objects/companies/${id}/associations/contacts/${cid}/company_to_contact`,{})));
+    showR('c-result','success','Empresa criada!',ctIds.length>0?`Associada a ${ctIds.length} contato(s).`:'',`https://app.hubspot.com/contacts/${AID}/record/0-2/${id}`);
+  }catch(e){showR('c-result','error','Erro',e.message);}
+  setB('c-btn',false,'🏢 Criar Empresa');
 }
 
 // ── CREATE CONTACT ──
-async function createContact() {
-  const first=document.getElementById('ct-first').value.trim(), email=document.getElementById('ct-email').value.trim();
-  if (!first||!email) return showResult('ct-result','error','Erro','Nome e e-mail são obrigatórios.');
-  document.getElementById('ct-btn').disabled=true; document.getElementById('ct-btn').textContent='⏳ Criando...';
-  try {
+async function createContact(){
+  const first=document.getElementById('ct-first').value.trim(),email=document.getElementById('ct-email').value.trim();
+  if(!first||!email)return showR('ct-result','error','Erro','Nome e e-mail são obrigatórios.');
+  setB('ct-btn',true,'');
+  try{
     const domain=email.split('@')[1]||'';
-    const companyId=!isPersonal(domain)?await findCompany(document.getElementById('ct-company').value.trim(),domain):null;
+    const coId=!isP(domain)?await findCo(document.getElementById('ct-company').value.trim(),domain):null;
     const props={firstname:first,email};
     const last=document.getElementById('ct-last').value,phone=document.getElementById('ct-phone').value,role=document.getElementById('ct-role').value,company=document.getElementById('ct-company').value,obs=document.getElementById('ct-obs').value;
     if(last)props.lastname=last;if(phone)props.phone=phone;if(role)props.jobtitle=role;if(company)props.company=company;if(obs)props.description=obs;
-    const ct=await hs('POST','/crm/v3/objects/contacts',{properties:props});
-    const id=ct.id;
-    if(companyId) await hs('PUT',`/crm/v4/objects/contacts/${id}/associations/companies/${companyId}/contact_to_company`,{});
-    showResult('ct-result','success','Contato criado!',companyId?'Associado à empresa pelo domínio.':'',`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${id}`);
-  }catch(e){showResult('ct-result','error','Erro',e.message);}
-  document.getElementById('ct-btn').disabled=false; document.getElementById('ct-btn').textContent='👤 Criar Contato';
+    const ct=await hs('POST','/crm/v3/objects/contacts',{properties:props});const id=ct.id;
+    if(coId)await hs('PUT',`/crm/v4/objects/contacts/${id}/associations/companies/${coId}/contact_to_company`,{});
+    showR('ct-result','success','Contato criado!',coId?'Associado à empresa pelo domínio.':'',`https://app.hubspot.com/contacts/${AID}/record/0-1/${id}`);
+  }catch(e){showR('ct-result','error','Erro',e.message);}
+  setB('ct-btn',false,'👤 Criar Contato');
 }
 
 // ── VALIDATE LOGIC ──
-async function doValidate(name, domain) {
-  const today=new Date(), d90=new Date(today-90*24*60*60*1000), d30=new Date(today-30*24*60*60*1000);
+async function doValidate(name,domain){
+  const today=new Date(),d90=new Date(today-90*24*60*60*1000),d30=new Date(today-30*24*60*60*1000);
+  const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
+  const cn=(name||'').trim();
+  if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
-  // Limpa o domínio — remove @ se o usuário digitou @omnibees.com
-  const cleanDomain = (domain||'').replace(/^@/,'').trim().toLowerCase();
-  const cleanName = (name||'').trim();
+  // Busca empresa — cascata estrita: domínio exato → nome exato → nome uppercase → fuzzy rigoroso
+  let mc=null;
 
-  if (!cleanName && !cleanDomain) throw new Error('Informe o nome ou o domínio da empresa.');
-
-  // ── Busca empresa ──
-  let mainCompany = null;
-
-  // 1. Prioridade máxima: domínio exato
-  if (cleanDomain && !isPersonal(cleanDomain)) {
-    const d = await hs('POST','/crm/v3/objects/companies/search',{
-      filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cleanDomain}]}],
-      properties:['name','domain'], limit:1
+  if(cd&&!isP(cd)){
+    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cd}]}],properties:['name','domain'],limit:1});
+    if(d.results?.length)mc=d.results[0];
+  }
+  if(!mc&&cn){
+    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cn}]}],properties:['name','domain'],limit:1});
+    if(d.results?.length)mc=d.results[0];
+  }
+  if(!mc&&cn){
+    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cn.toUpperCase()}]}],properties:['name','domain'],limit:1});
+    if(d.results?.length)mc=d.results[0];
+  }
+  if(!mc&&cn){
+    const d=await hs('POST','/crm/v3/objects/companies/search',{query:cn,properties:['name','domain'],limit:5});
+    const nL=cn.toLowerCase();
+    const match=(d.results||[]).find(c=>{
+      const cN=(c.properties.name||'').toLowerCase();
+      return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=5)||(nL.includes(cN)&&cN.length>=5);
     });
-    if (d.results?.length) mainCompany = d.results[0];
+    if(match)mc=match;
   }
 
-  // 2. Se não achou por domínio, tenta nome exato
-  if (!mainCompany && cleanName) {
-    const d = await hs('POST','/crm/v3/objects/companies/search',{
-      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cleanName}]}],
-      properties:['name','domain'], limit:1
-    });
-    if (d.results?.length) mainCompany = d.results[0];
-  }
+  if(!mc)return{can:true,co:null,deals:[],contacts:[],blocker:null,reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
 
-  // 3. Se ainda não achou, tenta nome em caixa alta (padrão HubSpot)
-  if (!mainCompany && cleanName) {
-    const d = await hs('POST','/crm/v3/objects/companies/search',{
-      filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cleanName.toUpperCase()}]}],
-      properties:['name','domain'], limit:1
-    });
-    if (d.results?.length) mainCompany = d.results[0];
-  }
+  const mid=parseInt(mc.id);
 
-  // 4. Último recurso: query fuzzy — mas valida relevância estritamente
-  if (!mainCompany && cleanName) {
-    const d = await hs('POST','/crm/v3/objects/companies/search',{
-      query:cleanName, properties:['name','domain'], limit:5
-    });
-    // Só aceita se o nome for substancialmente parecido
-    const match = (d.results||[]).find(c => {
-      const cName = (c.properties.name||'').toLowerCase();
-      const nLow = cleanName.toLowerCase();
-      return cName === nLow ||
-             cName.replace(/[^a-z0-9]/g,'') === nLow.replace(/[^a-z0-9]/g,'') ||
-             (cName.includes(nLow) && nLow.length >= 4) ||
-             (nLow.includes(cName) && cName.length >= 4);
-    });
-    if (match) mainCompany = match;
-  }
-
-  if (!mainCompany) return {
-    can:true, companiesFound:[], deals:[], contacts:[], blocker:null,
-    reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'
-  };
-
-  const mainId = parseInt(mainCompany.id);
-
-  // ── Busca negócios APENAS desta empresa ──
-  const dealsData = await hs('POST','/crm/v3/objects/deals/search',{
-    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
+  // Busca negócios APENAS desta empresa
+  const dd=await hs('POST','/crm/v3/objects/deals/search',{
+    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mid]}]}],
     properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate'],
     limit:50
   });
-  const allDeals = dealsData.results||[];
+  const allDeals=dd.results||[];
 
-  // ── Busca contatos APENAS desta empresa ──
+  // Busca contatos APENAS desta empresa
   let allContacts=[];
-  try {
-    const ct = await hs('POST','/crm/v3/objects/contacts/search',{
-      filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mainId]}]}],
-      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'], limit:20
+  try{
+    const cd2=await hs('POST','/crm/v3/objects/contacts/search',{
+      filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mid]}]}],
+      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'],limit:20
     });
-    allContacts = ct.results||[];
-  } catch(e){}
+    allContacts=cd2.results||[];
+  }catch{}
 
-  // ── Aplica regras nos 4 pipelines relevantes ──
+  // Aplica regras — só pipelines relevantes
   let blocker=null;
-  const relevantDeals = allDeals.filter(d=>RELEVANT_PIPES.includes(d.properties.pipeline));
+  const relDeals=allDeals.filter(d=>RP.includes(d.properties.pipeline));
 
-  for (const deal of relevantDeals) {
-    const p = deal.properties;
-    const statusLow = (p.status_do_negocio||'').toLowerCase();
-    const cicloLow  = (p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
-    const pipe = PIPE_NAMES[p.pipeline]||p.pipeline;
-    const link = `https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${deal.id}`;
-
-    // Regra 1: Negócio em aberto → bloqueia imediatamente
-    if (statusLow==='aberto') {
-      blocker={rule:'aberto', msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`, link};
-      break;
-    }
-    // Regra 2: Cliente ativo
-    if (cicloLow==='cliente' && statusLow!=='perdido') {
-      blocker={rule:'cliente', msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`, link};
-      break;
-    }
-    // Regra 3: Ex-cliente com churn ≤ 90 dias
-    if (['ex-cliente','cliente'].includes(cicloLow) && p.data_de_churn) {
-      const churn=new Date(p.data_de_churn);
-      if (churn>=d90) { blocker={rule:'churn', msg:`Churn recente em ${churn.toLocaleDateString('pt-BR')} (menos de 90 dias).`, link}; break; }
-    }
-    // Regra 4: Negócio perdido ≤ 30 dias
-    if (statusLow==='perdido' && p.closedate) {
-      const closed=new Date(p.closedate);
-      if (closed>=d30) { blocker={rule:'perdido_recente', msg:`Negócio perdido em ${closed.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`, link}; break; }
+  for(const deal of relDeals){
+    const p=deal.properties,sL=(p.status_do_negocio||'').toLowerCase(),cL=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
+    const pipe=PN[p.pipeline]||p.pipeline,link=`https://app.hubspot.com/contacts/${AID}/record/0-3/${deal.id}`;
+    // Regra 1: aberto
+    if(sL==='aberto'){blocker={rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link};break;}
+    // Regra 2: cliente ativo
+    if(cL==='cliente'&&sL!=='perdido'){blocker={rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link};break;}
+    // Regra 3: ex-cliente churn ≤ 90 dias
+    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){const ch=new Date(p.data_de_churn);if(ch>=d90){blocker={rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias).`,link};break;}}
+    // Regra 4: perdido ≤ 30 dias
+    if(sL==='perdido'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blocker={rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link};break;}}
+  }
+  if(!blocker){
+    for(const c of allContacts){
+      if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){blocker={rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`};break;}
     }
   }
-
-  // Verifica contatos como cliente
-  if (!blocker) {
-    for (const c of allContacts) {
-      if ((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente') {
-        blocker={rule:'contato_cliente', msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`, link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-1/${c.id}`};
-        break;
-      }
-    }
-  }
-
-  return {can:!blocker, companiesFound:[mainCompany], deals:allDeals, contacts:allContacts, blocker, relevant:relevantDeals};
+  return{can:!blocker,co:mc,deals:allDeals,contacts:allContacts,blocker,relDeals};
 }
 
-// ── RENDER VALIDATE RESULT ──
-function renderValidateResult(containerId, name, domain, r) {
+function renderValidate(cid,name,domain,r){
   const fmt=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
-  const hsLink=(id,type,label)=>`<a class="v-link" href="https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/${type}/${id}" target="_blank">${label}</a>`;
-
+  const hl=(id,type,label)=>`<a class="vl" href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank">${label}</a>`;
   const verdict=r.can
-    ?`<div class="v-verdict" style="background:#f0fff4;border:3px solid #27ae60"><div class="icon">✅</div><div class="title" style="color:#276749">Pode Prospectar</div></div>`
-    :`<div class="v-verdict" style="background:#fff0f0;border:3px solid #e74c3c">
-        <div class="icon">❌</div>
-        <div class="title" style="color:#c53030">Não Pode Prospectar</div>
-        <div class="blocker" style="color:#c53030">${r.blocker?.msg||''}</div>
-        ${r.blocker?.link?`<div style="margin-top:8px">${hsLink(r.blocker.link.split('/').pop(),'0-3','🔗 Ver negócio')}</div>`:''}
+    ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60"><div class="vv-icon">✅</div><div class="vv-title" style="color:#276749">Pode Prospectar</div></div>`
+    :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c"><div class="vv-icon">❌</div><div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
+       <div class="vv-msg" style="color:#c53030">${r.blocker?.msg||''}</div>
+       ${r.blocker?.link?`<div style="margin-top:8px">${hl(r.blocker.link.split('/').pop(),'0-3','🔗 Ver negócio')}</div>`:''}
       </div>`;
-
   const reason=r.reason?`<div style="background:#f7f7f7;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;color:#555">${r.reason}</div>`:'';
-
-  const summary=`<div class="v-summary">
-    <div class="v-summary-card"><div class="num">${r.companiesFound?.length||0}</div><div class="lbl">EMPRESA(S)</div></div>
-    <div class="v-summary-card"><div class="num">${r.deals?.length||0}</div><div class="lbl">NEGÓCIO(S)</div></div>
-    <div class="v-summary-card"><div class="num">${r.contacts?.length||0}</div><div class="lbl">CONTATO(S)</div></div>
+  const summary=`<div class="vs">
+    <div class="vs-c"><div class="n">${r.co?1:0}</div><div class="l">EMPRESA</div></div>
+    <div class="vs-c"><div class="n">${r.deals?.length||0}</div><div class="l">NEGÓCIO(S)</div></div>
+    <div class="vs-c"><div class="n">${r.contacts?.length||0}</div><div class="l">CONTATO(S)</div></div>
   </div>`;
-
-  const companiesHtml=r.companiesFound?.length?`
-    <div style="margin-bottom:14px">
-      <div class="v-section-title">🏢 Empresas Encontradas</div>
-      ${r.companiesFound.map(c=>`<div class="v-company-item">
-        <span style="font-weight:600">${c.properties.name||'—'}</span>
-        <span style="display:flex;gap:12px;align-items:center">
-          ${c.properties.domain?`<span style="color:#888;font-size:12px">${c.properties.domain}</span>`:''}
-          ${hsLink(c.id,'0-2','🔗 Ver')}
-        </span>
-      </div>`).join('')}
-    </div>`:'';
-
-  const relevantDeals=r.relevant||[];
-  const dealsHtml=relevantDeals.length?`
-    <div style="margin-bottom:14px">
-      <div class="v-section-title">💼 Negócios nos Pipelines Relevantes</div>
-      ${relevantDeals.map(d=>{
-        const p=d.properties, status=(p.status_do_negocio||'').toLowerCase();
-        const sColor=status==='aberto'?'#e17055':status==='ganho'?'#27ae60':'#888';
-        const sBg=status==='aberto'?'#fff8f6':status==='ganho'?'#f0fff4':'#f7f7f7';
-        return `<div class="v-deal-item" style="background:${sBg};border-color:${sColor}44">
-          <div class="v-deal-title">
-            <span style="font-weight:700;color:#333">${p.dealname||'—'}</span>
-            <span class="status-badge" style="background:${sColor}18;color:${sColor};border:1px solid ${sColor}44">${p.status_do_negocio||'—'}</span>
-          </div>
-          <div class="v-deal-meta">
-            <span>📊 ${PIPE_NAMES[p.pipeline]||p.pipeline||'—'}</span>
-            ${p.estagio_de_ciclo_de_vida___negocio?`<span>🔄 ${p.estagio_de_ciclo_de_vida___negocio}</span>`:''}
-            ${p.data_de_churn?`<span>🔴 Churn: ${fmt(p.data_de_churn)}</span>`:''}
-            ${p.closedate&&status==='perdido'?`<span>📅 Fechamento: ${fmt(p.closedate)}</span>`:''}
-          </div>
-          <div>${hsLink(d.id,'0-3','🔗 Ver negócio')}</div>
-        </div>`;
-      }).join('')}
-    </div>`:'';
-
-  document.getElementById(containerId).innerHTML=`<div style="margin-top:16px">
-    <div style="font-size:13px;color:#888;margin-bottom:12px">Consultado: <strong>${name}</strong>${domain?` • ${domain}`:''}</div>
-    ${verdict}${reason}${summary}${companiesHtml}${dealsHtml}
+  const coHtml=r.co?`<div style="margin-bottom:14px">
+    <div class="vst">🏢 Empresa Encontrada</div>
+    <div class="vci"><span style="font-weight:600">${r.co.properties.name||'—'}</span>
+      <span style="display:flex;gap:12px;align-items:center">
+        ${r.co.properties.domain?`<span style="color:#888;font-size:12px">${r.co.properties.domain}</span>`:''}
+        ${hl(r.co.id,'0-2','🔗 Ver')}
+      </span></div></div>`:''  ;
+  const relDeals=r.relDeals||[];
+  const dealsHtml=relDeals.length?`<div style="margin-bottom:14px">
+    <div class="vst">💼 Negócios nos Pipelines Relevantes</div>
+    ${relDeals.map(d=>{const p=d.properties,sL=(p.status_do_negocio||'').toLowerCase();
+      const sc=sL==='aberto'?'#e17055':sL==='ganho'?'#27ae60':'#888';
+      const sb=sL==='aberto'?'#fff8f6':sL==='ganho'?'#f0fff4':'#f7f7f7';
+      return`<div class="vdi" style="background:${sb};border-color:${sc}44">
+        <div class="vdi-top"><span style="font-weight:700;color:#333">${p.dealname||'—'}</span>
+          <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}44">${p.status_do_negocio||'—'}</span></div>
+        <div class="vdi-meta">
+          <span>📊 ${PN[p.pipeline]||p.pipeline||'—'}</span>
+          ${p.estagio_de_ciclo_de_vida___negocio?`<span>🔄 ${p.estagio_de_ciclo_de_vida___negocio}</span>`:''}
+          ${p.data_de_churn?`<span>🔴 Churn: ${fmt(p.data_de_churn)}</span>`:''}
+          ${p.closedate&&sL==='perdido'?`<span>📅 Fechamento: ${fmt(p.closedate)}</span>`:''}
+        </div>
+        <div>${hl(d.id,'0-3','🔗 Ver negócio')}</div>
+      </div>`;}).join('')}</div>`:'';
+  document.getElementById(cid).innerHTML=`<div style="margin-top:16px">
+    <div style="font-size:13px;color:#888;margin-bottom:12px">Consultado: <strong>${name||domain}</strong>${name&&domain?` • ${domain}`:''}</div>
+    ${verdict}${reason}${summary}${coHtml}${dealsHtml}
   </div>`;
 }
 
-// ── VALIDATE SINGLE ──
-async function validateSingle() {
-  const name=document.getElementById('v-name').value.trim(), domain=document.getElementById('v-domain').value.trim();
-  if (!name && !domain) return showResult('v-result','error','Erro','Informe o nome ou o domínio da empresa.');
-  document.getElementById('v-btn').disabled=true; document.getElementById('v-btn').textContent='⏳ Validando...';
-  document.getElementById('v-result').innerHTML='<div class="v-loading">⏳ Vasculhando HubSpot...</div>';
-  try {
-    const r=await doValidate(name,domain);
-    renderValidateResult('v-result',name,domain,r);
-  } catch(e){showResult('v-result','error','Erro',e.message);}
-  document.getElementById('v-btn').disabled=false; document.getElementById('v-btn').textContent='🔍 Validar';
+async function validateSingle(){
+  const name=document.getElementById('v-name').value.trim(),domain=document.getElementById('v-domain').value.trim();
+  if(!name&&!domain)return showR('v-result','error','Erro','Informe o nome ou o domínio da empresa.');
+  setB('v-btn',true,'');
+  document.getElementById('v-result').innerHTML='<div class="vloading">⏳ Vasculhando HubSpot...</div>';
+  try{const r=await doValidate(name,domain);renderValidate('v-result',name,domain,r);}
+  catch(e){showR('v-result','error','Erro',e.message);}
+  setB('v-btn',false,'🔍 Validar');
 }
 
-// ── BULK FILES ──
-let bulkDealRows=[], bulkValidateRows=[];
-function parseFile(file, type, cb) {
+// ── FILES ──
+let bulkDR=[],bulkVR=[];
+function parseFile(file,type,cb){
   const ext=file.name.split('.').pop().toLowerCase();
-  if (ext==='csv') {
-    const r=new FileReader(); r.onload=e=>{
-      const lines=e.target.result.split('\n').filter(Boolean);
-      cb(lines.slice(1).map(l=>{const c=l.split(',').map(s=>s.replace(/"/g,'').trim());
-        return type==='deal'?{empresa:c[0]||'',dominio:c[1]||'',pipeline:c[2]||'',proprietario:c[3]||'',valor:c[4]||'',obs:c[5]||''}:{name:c[0]||'',domain:c[1]||''};
-      }).filter(r=>type==='deal'?r.empresa:r.name));
-    }; r.readAsText(file);
-  } else {
-    const r=new FileReader(); r.onload=e=>{
-      const wb=XLSX.read(e.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], data=XLSX.utils.sheet_to_json(ws,{header:1});
-      cb(data.slice(1).map(row=>type==='deal'?{empresa:String(row[0]||'').trim(),dominio:String(row[1]||'').trim(),pipeline:String(row[2]||'').trim(),proprietario:String(row[3]||'').trim(),valor:String(row[4]||'').trim(),obs:String(row[5]||'').trim()}:{name:String(row[0]||'').trim(),domain:String(row[1]||'').trim()}).filter(r=>type==='deal'?r.empresa:r.name));
-    }; r.readAsArrayBuffer(file);
-  }
+  if(ext==='csv'){const r=new FileReader();r.onload=e=>{const lines=e.target.result.split('\n').filter(Boolean);cb(lines.slice(1).map(l=>{const c=l.split(',').map(s=>s.replace(/"/g,'').trim());return type==='deal'?{empresa:c[0]||'',dominio:c[1]||'',pipeline:c[2]||'',proprietario:c[3]||'',valor:c[4]||'',obs:c[5]||''}:{name:c[0]||'',domain:c[1]||''}}).filter(r=>type==='deal'?r.empresa:r.name||r.domain));};r.readAsText(file);}
+  else{const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSX.utils.sheet_to_json(ws,{header:1});cb(data.slice(1).map(row=>type==='deal'?{empresa:String(row[0]||'').trim(),dominio:String(row[1]||'').trim(),pipeline:String(row[2]||'').trim(),proprietario:String(row[3]||'').trim(),valor:String(row[4]||'').trim(),obs:String(row[5]||'').trim()}:{name:String(row[0]||'').trim(),domain:String(row[1]||'').trim()}).filter(r=>type==='deal'?r.empresa:r.name||r.domain));};r.readAsArrayBuffer(file);}
 }
-function handleBulkFile(event, type) {
-  const file=event.target.files[0]; if (!file) return;
-  const prefix=type==='deal'?'db':'vb';
-  document.getElementById(`${prefix}-filename`).textContent=file.name;
-  parseFile(file, type, rows=>{
-    if (type==='deal'){bulkDealRows=rows;document.getElementById('db-file-info').style.display='block';document.getElementById('db-file-info').textContent=`✅ ${rows.length} empresas carregadas`;}
-    else{bulkValidateRows=rows;document.getElementById('vb-file-info').style.display='block';document.getElementById('vb-file-info').textContent=`✅ ${rows.length} empresas carregadas`;}
-  });
+function handleFile(e,type){
+  const file=e.target.files[0];if(!file)return;
+  const p=type==='deal'?'db':'vb';document.getElementById(`${p}-fname`).textContent=file.name;
+  parseFile(file,type,rows=>{if(type==='deal'){bulkDR=rows;document.getElementById('db-finfo').style.display='block';document.getElementById('db-finfo').textContent=`✅ ${rows.length} empresas carregadas`;}else{bulkVR=rows;document.getElementById('vb-finfo').style.display='block';document.getElementById('vb-finfo').textContent=`✅ ${rows.length} empresas carregadas`;}});
 }
-function parseBulkText(txt) { return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(',').map(s=>s.trim());return{empresa:p[0]||'',dominio:p[1]||'',pipeline:p[2]||'',proprietario:p[3]||'',valor:p[4]||'',obs:p[5]||''};}); }
-function parseValidateText(txt) { return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const[n,d]=l.split(',').map(s=>s.trim());return{name:n||'',domain:d||''};}); }
-function updateProgress(prefix, done, total) {
-  document.getElementById(`${prefix}-prog-txt`).textContent=`${done}/${total}`;
-  document.getElementById(`${prefix}-prog-bar`).style.width=`${(done/total)*100}%`;
-}
+function parseBT(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(',').map(s=>s.trim());return{empresa:p[0]||'',dominio:p[1]||'',pipeline:p[2]||'',proprietario:p[3]||'',valor:p[4]||'',obs:p[5]||''};});}
+function parseVT(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const[n,d]=l.split(',').map(s=>s.trim());return{name:n||'',domain:d||''};});}
+function upProg(p,done,total){document.getElementById(`${p}-ptxt`).textContent=`${done}/${total}`;document.getElementById(`${p}-pbar`).style.width=`${(done/total)*100}%`;}
 
-// ── RESULTS TABLE ──
-function renderTable(id, results, cols) {
+function renderTable(id,results,cols){
   const sc=s=>s?.includes('✅')?'#27ae60':s?.includes('⚠️')?'#f39c12':'#e74c3c';
-  const chips=['✅','❌','⚠️'].map(e=>{const n=results.filter(r=>(r.status||'').startsWith(e)).length;return n>0?`<span class="chip" style="background:${sc(e+'x')}18;color:${sc(e+'x')};border:1px solid ${sc(e+'x')}44">${e} ${n}</span>`:''}).join('');
+  const chips=['✅','❌','⚠️'].map(e=>{const n=results.filter(r=>(r.status||'').startsWith(e)).length;return n>0?`<span style="background:${sc(e+'x')}18;color:${sc(e+'x')};border:1px solid ${sc(e+'x')}44;border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700">${e} ${n}</span>`:''}).join('');
   const ths=cols.map(c=>`<th>${c.label}</th>`).join('');
-  const trs=results.map((r,i)=>`<tr>${cols.map(c=>{
-    if(c.key==='status')return`<td><span class="status-badge" style="background:${sc(r.status)}18;color:${sc(r.status)};border:1px solid ${sc(r.status)}44">${r.status}</span></td>`;
-    if(c.key==='link')return`<td>${r.link?`<a class="v-link" href="${r.link}" target="_blank">🔗 Abrir</a>`:'—'}</td>`;
-    return`<td style="font-weight:${c.bold?600:400};color:${c.bold?'#333':'#555'};max-width:${c.maxW||200}px">${r[c.key]||'—'}</td>`;
+  const trs=results.map(r=>`<tr>${cols.map(c=>{
+    if(c.key==='status')return`<td><span class="badge" style="background:${sc(r.status)}18;color:${sc(r.status)};border:1px solid ${sc(r.status)}44">${r.status}</span></td>`;
+    if(c.key==='link')return`<td>${r.link?`<a class="vl" href="${r.link}" target="_blank">🔗 Abrir</a>`:'—'}</td>`;
+    return`<td style="font-weight:${c.bold?600:400};color:${c.bold?'#333':'#555'};max-width:${c.mw||200}px">${r[c.key]||'—'}</td>`;
   }).join('')}</tr>`).join('');
   document.getElementById(id).innerHTML=`
-    <div class="results-header"><span style="font-weight:700;font-size:14px;color:#333">Resultados — ${results.length}</span>
-      <button class="btn-export" onclick="exportTable('${id}')">⬇️ Exportar XLSX</button></div>
+    <div class="rh"><span style="font-weight:700;font-size:14px;color:#333">Resultados — ${results.length}</span><button class="btn-export" onclick="exportT('${id}')">⬇️ Exportar XLSX</button></div>
     <div class="chips">${chips}</div>
-    <div class="table-wrap"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
-  document.getElementById(id)._r=results; document.getElementById(id)._c=cols;
+    <div class="tw"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+  document.getElementById(id)._r=results;document.getElementById(id)._c=cols;
 }
-function exportTable(id) {
-  const el=document.getElementById(id),r=el._r,c=el._c; if(!r)return;
+function exportT(id){
+  const el=document.getElementById(id),r=el._r,c=el._c;if(!r)return;
   const data=[c.map(x=>x.label),...r.map(row=>c.map(x=>row[x.key]||''))];
-  const ws=XLSX.utils.aoa_to_sheet(data); ws['!cols']=c.map(x=>({wch:x.w||20}));
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Resultados');
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=c.map(x=>({wch:x.w||20}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Resultados');
   XLSX.writeFile(wb,`resultados_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ── BULK DEALS ──
-async function runBulkDeals() {
-  const textMode=document.getElementById('db-text-area').style.display!=='none';
-  const rows=textMode?parseBulkText(document.getElementById('db-list').value):bulkDealRows;
-  if (!rows.length) return alert('Nenhuma empresa para processar.');
-  document.getElementById('db-btn').disabled=true; document.getElementById('db-btn').textContent='⏳ Criando...';
-  const pipeId=document.getElementById('db-pipe').value, stageId=document.getElementById('db-stage').value, ownerBase=document.getElementById('db-owner').value.trim()||DEFAULT_OWNER;
-  const pipeInfo=PIPELINES[pipeId];
-  document.getElementById('db-progress').style.display='block';
-  updateProgress('db',0,rows.length);
+async function runBulkDeals(){
+  const tm=document.getElementById('db-text-area').style.display!=='none';
+  const rows=tm?parseBT(document.getElementById('db-list').value):bulkDR;
+  if(!rows.length)return alert('Nenhuma empresa para processar.');
+  setB('db-btn',true,'');
+  const pId=document.getElementById('db-pipe').value,sId=document.getElementById('db-stage').value,oBase=document.getElementById('db-owner').value.trim()||DO;
+  const pInfo=PIPES[pId];
+  document.getElementById('db-prog').style.display='block';upProg('db',0,rows.length);
   const results=[];
-  for (let i=0;i<rows.length;i++) {
-    const r=rows[i], aP=PIPELINES[r.pipeline]||pipeInfo;
-    try {
-      const ownerId=await findOwner(r.proprietario||ownerBase);
-      const companyId=await findCompany(r.empresa,r.dominio);
-      const contactIds=r.dominio&&!isPersonal(r.dominio)?await findContactsByDomain(r.dominio):[];
-      const props={dealname:r.empresa,pipeline:aP.id||pipeId,dealstage:stageId,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
-      if(r.valor)props.amount=r.valor; if(r.obs)props.description=r.obs;
-      const id=await hsCreateDeal(props,companyId,contactIds);
-      results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'✅ Criado',link:`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-3/${id}`});
-    } catch(e){results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'❌ Erro',link:'',motivo:e.message});}
-    updateProgress('db',i+1,rows.length);
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i],aP=PIPES[r.pipeline]||pInfo;
+    try{
+      const oId=await findOwner(r.proprietario||oBase),coId=await findCo(r.empresa,r.dominio);
+      const ctIds=r.dominio&&!isP(r.dominio)?await findCtsByDomain(r.dominio):[];
+      const props={dealname:r.empresa,pipeline:aP.id||pId,dealstage:sId,status_do_negocio:'Aberto',hubspot_owner_id:oId};
+      if(r.valor)props.amount=r.valor;if(r.obs)props.description=r.obs;
+      const id=await mkDeal(props,coId,ctIds);
+      results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'✅ Criado',link:`https://app.hubspot.com/contacts/${AID}/record/0-3/${id}`});
+    }catch(e){results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'❌ Erro',link:'',motivo:e.message});}
+    upProg('db',i+1,rows.length);
     renderTable('db-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'pipeline',label:'Pipeline',w:22},{key:'status',label:'Status',w:16},{key:'link',label:'Link',w:50}]);
   }
-  document.getElementById('db-btn').disabled=false; document.getElementById('db-btn').textContent='💼 Criar Negócios';
+  setB('db-btn',false,'💼 Criar Negócios');
 }
 
-// ── BULK VALIDATE ──
-async function runBulkValidate() {
-  const textMode=document.getElementById('vb-text-area').style.display!=='none';
-  const rows=textMode?parseValidateText(document.getElementById('vb-list').value):bulkValidateRows;
-  if (!rows.length) return alert('Nenhuma empresa para validar.');
-  document.getElementById('vb-btn').disabled=true; document.getElementById('vb-btn').textContent='⏳ Validando...';
-  document.getElementById('vb-progress').style.display='block';
-  updateProgress('vb',0,rows.length);
+async function runBulkValidate(){
+  const tm=document.getElementById('vb-text-area').style.display!=='none';
+  const rows=tm?parseVT(document.getElementById('vb-list').value):bulkVR;
+  if(!rows.length)return alert('Nenhuma empresa para validar.');
+  setB('vb-btn',true,'');
+  document.getElementById('vb-prog').style.display='block';upProg('vb',0,rows.length);
   const results=[];
-  for (let i=0;i<rows.length;i++) {
-    const {name,domain}=rows[i];
-    try {
+  for(let i=0;i<rows.length;i++){
+    const{name,domain}=rows[i];
+    try{
       const r=await doValidate(name,domain);
-      results.push({
-        empresa:name, dominio:domain||'—',
-        status:r.can?'✅ Pode Prospectar':'❌ Não Pode',
-        motivo:r.can?'Sem bloqueios ativos':(r.blocker?.msg||r.reason||'Ver detalhes'),
-        link:r.blocker?.link||(r.companiesFound?.[0]?`https://app.hubspot.com/contacts/${ACCOUNT_ID}/record/0-2/${r.companiesFound[0].id}`:'')
-      });
-    } catch(e){results.push({empresa:name,dominio:domain||'—',status:'❌ Erro',motivo:e.message,link:''});}
-    updateProgress('vb',i+1,rows.length);
-    renderTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo',w:60},{key:'link',label:'Link',w:50}]);
+      results.push({empresa:name||domain,dominio:domain||'—',status:r.can?'✅ Pode Prospectar':'❌ Não Pode',motivo:r.can?'Sem bloqueios ativos':(r.blocker?.msg||r.reason||'Ver detalhes'),link:r.blocker?.link||(r.co?`https://app.hubspot.com/contacts/${AID}/record/0-2/${r.co.id}`:'')});
+    }catch(e){results.push({empresa:name||domain,dominio:domain||'—',status:'❌ Erro',motivo:e.message,link:''});}
+    upProg('vb',i+1,rows.length);
+    renderTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo',w:60,mw:300},{key:'link',label:'Link',w:50}]);
   }
-  document.getElementById('vb-btn').disabled=false; document.getElementById('vb-btn').textContent='🔍 Validar Empresas';
+  setB('vb-btn',false,'🔍 Validar Empresas');
 }
 
-// Init
-updateStage();
-updateBulkStage();
+updateStage();updateBulkStage();
 </script>
 </body>
 </html>
