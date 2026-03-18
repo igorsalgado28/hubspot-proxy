@@ -275,7 +275,7 @@ const PIPELINES = {
 
 const hs = async (method, path, body) => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const res = await fetch(`${PROXY}/${cleanPath}`, {
+  const res = await fetch(`${PROXY}?path=${cleanPath}`, {
     method,
     headers:{'Content-Type':'application/json'},
     ...(body ? {body:JSON.stringify(body)} : {})
