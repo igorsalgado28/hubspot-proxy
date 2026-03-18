@@ -5,10 +5,7 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const { path } = req.query;
-  if (!path) return res.status(400).json({ error: "path required" });
-
-  const hsPath = Array.isArray(path) ? path.join("/") : path;
+  const hsPath = req.query.path || "";
   const url = `https://api.hubapi.com/${hsPath}`;
 
   try {
