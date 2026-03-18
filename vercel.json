@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/hubspot/(.*)", "destination": "/api/hubspot/[...path]" },
     { "source": "/", "destination": "/public/index.html" }
   ]
 }
