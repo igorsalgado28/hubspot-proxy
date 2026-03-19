@@ -506,6 +506,14 @@ async function doValidate(name,domain){
       const cl=new Date(p.closedate);
       if(cl>=d30){
         blockers.push({rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});
+        continue;
+      }
+    }
+    // Regra 5: Ganho no Pré-Vendas Inbound ≤ 30 dias (SQL gerado — reunião agendada recente)
+    if(sL==='ganho'&&p.pipeline==='11075625'&&p.closedate){
+      const cl=new Date(p.closedate);
+      if(cl>=d30){
+        blockers.push({rule:'sql_recente',msg:`SQL gerado recentemente — negócio ganho no pipeline "Pré-Vendas - Inbound" em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});
       }
     }
   }
