@@ -278,8 +278,34 @@ const findOwner=async v=>{
 };
 const findCo=async(name,domain)=>{
   if(!name&&!domain)return null;
-  try{const f=domain&&!isP(domain)?[{propertyName:'domain',operator:'EQ',value:domain}]:[{propertyName:'name',operator:'EQ',value:name}];
-  const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:f}],properties:['name','domain'],limit:1});return d.results?.[0]?.id||null;}catch{return null;}
+  try{
+    // 1. Tenta por domínio exato
+    if(domain&&!isP(domain)){
+      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:domain}]}],properties:['name','domain'],limit:1});
+      if(d.results?.length)return d.results[0].id;
+    }
+    // 2. Tenta por nome exato
+    if(name){
+      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name}]}],properties:['name','domain'],limit:1});
+      if(d.results?.length)return d.results[0].id;
+    }
+    // 3. Tenta por nome em maiúsculas
+    if(name){
+      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name.toUpperCase()}]}],properties:['name','domain'],limit:1});
+      if(d.results?.length)return d.results[0].id;
+    }
+    // 4. Fuzzy como último recurso
+    if(name){
+      const d=await hs('POST','/crm/v3/objects/companies/search',{query:name,properties:['name','domain'],limit:5});
+      const nL=name.toLowerCase();
+      const match=(d.results||[]).find(c=>{
+        const cN=(c.properties.name||'').toLowerCase();
+        return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
+      });
+      if(match)return match.id;
+    }
+    return null;
+  }catch{return null;}
 };
 const findCtsByDomain=async domain=>{
   if(!domain||isP(domain))return[];
@@ -340,8 +366,11 @@ async function createDeal(){
   try{
     const pipe=document.getElementById('d-pipe').value,p=PIPES[pipe];
     const owner=document.getElementById('d-owner').value.trim(),company=document.getElementById('d-company').value.trim();
+    // Extrai domínio do campo empresa se for um domínio, senão usa o nome do negócio como fallback para busca
     const domain=company.includes('.')?company:'';
-    const ownerId=await findOwner(owner),coId=await findCo(company,domain);
+    const searchName=company||name; // usa empresa se preenchido, senão usa nome do negócio
+    const ownerId=await findOwner(owner);
+    const coId=await findCo(searchName,domain);
     const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
     const props={dealname:name,pipeline:pipe,dealstage:p.ds,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
     const amt=document.getElementById('d-amount').value,obs=document.getElementById('d-obs').value;
@@ -424,32 +453,37 @@ async function doValidate(name,domain){
 
   const mid=parseInt(mc.id);
 
-  // Busca IDs de negócios via API de associações (GET, sem body)
+  // Busca negócios via GET (sem body — evita problema do proxy)
   let allDeals=[];
   try{
-    const assocDeals=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
-    const dealIds=(assocDeals.results||[]).map(r=>r.toObjectId||r.id).filter(Boolean);
-    if(dealIds.length>0){
-      // Busca detalhes dos negócios por IDs
-      const batchRes=await hs('POST','/crm/v3/objects/deals/batch/read',{
-        inputs:dealIds.map(id=>({id:String(id)})),
-        properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']
-      });
-      allDeals=batchRes.results||[];
+    const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
+    const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
+    if(ids.length){
+      // Busca em lotes de 10 para não sobrecarregar
+      for(let i=0;i<ids.length;i+=10){
+        const batch=ids.slice(i,i+10);
+        try{
+          const r=await hs('POST','/crm/v3/objects/deals/batch/read',{
+            inputs:batch.map(id=>({id:String(id)})),
+            properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']
+          });
+          allDeals.push(...(r.results||[]));
+        }catch{}
+      }
     }
-  }catch(e){console.error('deals error',e);}
+  }catch(e){console.error('assoc deals error',e.message);}
 
-  // Busca IDs de contatos via API de associações (GET, sem body)
+  // Busca contatos via GET (sem body)
   let allContacts=[];
   try{
-    const assocCts=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
-    const ctIds=(assocCts.results||[]).map(r=>r.toObjectId||r.id).filter(Boolean);
-    if(ctIds.length>0){
-      const batchCts=await hs('POST','/crm/v3/objects/contacts/batch/read',{
-        inputs:ctIds.map(id=>({id:String(id)})),
+    const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
+    const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
+    if(ids.length){
+      const r=await hs('POST','/crm/v3/objects/contacts/batch/read',{
+        inputs:ids.map(id=>({id:String(id)})),
         properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']
       });
-      allContacts=batchCts.results||[];
+      allContacts=r.results||[];
     }
   }catch{}
 
