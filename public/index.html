@@ -278,29 +278,22 @@ const findOwner=async v=>{
 };
 const findCo=async(name,domain)=>{
   if(!name&&!domain)return null;
+  const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
+  const cn=(name||'').trim();
   try{
-    // 1. Tenta por domínio exato
-    if(domain&&!isP(domain)){
-      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:domain}]}],properties:['name','domain'],limit:1});
+    // 1. Domínio exato via GET (sem body — mais confiável)
+    if(cd&&!isP(cd)){
+      const d=await hs('GET',`/crm/v3/objects/companies?limit=1&properties=name,domain&filterGroups=%5B%7B%22filters%22%3A%5B%7B%22propertyName%22%3A%22domain%22%2C%22operator%22%3A%22EQ%22%2C%22value%22%3A%22${encodeURIComponent(cd)}%22%7D%5D%7D%5D`);
       if(d.results?.length)return d.results[0].id;
     }
-    // 2. Tenta por nome exato
-    if(name){
-      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name}]}],properties:['name','domain'],limit:1});
-      if(d.results?.length)return d.results[0].id;
-    }
-    // 3. Tenta por nome em maiúsculas
-    if(name){
-      const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:name.toUpperCase()}]}],properties:['name','domain'],limit:1});
-      if(d.results?.length)return d.results[0].id;
-    }
-    // 4. Fuzzy como último recurso
-    if(name){
-      const d=await hs('POST','/crm/v3/objects/companies/search',{query:name,properties:['name','domain'],limit:5});
-      const nL=name.toLowerCase();
+    // 2. Nome exato via GET
+    if(cn){
+      const d=await hs('GET',`/crm/v3/objects/companies?limit=1&properties=name,domain&query=${encodeURIComponent(cn)}`);
+      // Valida que o nome retornado é realmente parecido
       const match=(d.results||[]).find(c=>{
-        const cN=(c.properties.name||'').toLowerCase();
-        return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
+        const cN=(c.properties?.name||'').toLowerCase();
+        const nL=cn.toLowerCase();
+        return cN===nL||cN===nL.toUpperCase().toLowerCase()||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
       });
       if(match)return match.id;
     }
@@ -424,29 +417,27 @@ async function doValidate(name,domain){
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
-  // Busca empresa — cascata estrita: domínio exato → nome exato → nome uppercase → fuzzy rigoroso
+  // Busca empresa via GET (sem body)
   let mc=null;
-
   if(cd&&!isP(cd)){
-    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cd}]}],properties:['name','domain'],limit:1});
-    if(d.results?.length)mc=d.results[0];
+    try{
+      const d=await hs('GET',`/crm/v3/objects/companies?limit=1&properties=name,domain&query=${encodeURIComponent(cd)}`);
+      const match=(d.results||[]).find(c=>(c.properties?.domain||'').toLowerCase()===cd);
+      if(match)mc=match;
+    }catch{}
   }
   if(!mc&&cn){
-    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cn}]}],properties:['name','domain'],limit:1});
-    if(d.results?.length)mc=d.results[0];
-  }
-  if(!mc&&cn){
-    const d=await hs('POST','/crm/v3/objects/companies/search',{filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:cn.toUpperCase()}]}],properties:['name','domain'],limit:1});
-    if(d.results?.length)mc=d.results[0];
-  }
-  if(!mc&&cn){
-    const d=await hs('POST','/crm/v3/objects/companies/search',{query:cn,properties:['name','domain'],limit:5});
-    const nL=cn.toLowerCase();
-    const match=(d.results||[]).find(c=>{
-      const cN=(c.properties.name||'').toLowerCase();
-      return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=5)||(nL.includes(cN)&&cN.length>=5);
-    });
-    if(match)mc=match;
+    try{
+      const d=await hs('GET',`/crm/v3/objects/companies?limit=5&properties=name,domain&query=${encodeURIComponent(cn)}`);
+      const nL=cn.toLowerCase();
+      const match=(d.results||[]).find(c=>{
+        const cN=(c.properties?.name||'').toLowerCase();
+        const cD=(c.properties?.domain||'').toLowerCase();
+        if(cd&&cD===cd)return true;
+        return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=5)||(nL.includes(cN)&&cN.length>=5);
+      });
+      if(match)mc=match;
+    }catch{}
   }
 
   if(!mc)return{can:true,co:null,deals:[],contacts:[],blocker:null,reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
