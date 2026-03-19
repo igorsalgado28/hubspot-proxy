@@ -424,22 +424,33 @@ async function doValidate(name,domain){
 
   const mid=parseInt(mc.id);
 
-  // Busca negócios APENAS desta empresa
-  const dd=await hs('POST','/crm/v3/objects/deals/search',{
-    filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mid]}]}],
-    properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate'],
-    limit:50
-  });
-  const allDeals=dd.results||[];
+  // Busca IDs de negócios via API de associações (GET, sem body)
+  let allDeals=[];
+  try{
+    const assocDeals=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
+    const dealIds=(assocDeals.results||[]).map(r=>r.toObjectId||r.id).filter(Boolean);
+    if(dealIds.length>0){
+      // Busca detalhes dos negócios por IDs
+      const batchRes=await hs('POST','/crm/v3/objects/deals/batch/read',{
+        inputs:dealIds.map(id=>({id:String(id)})),
+        properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']
+      });
+      allDeals=batchRes.results||[];
+    }
+  }catch(e){console.error('deals error',e);}
 
-  // Busca contatos APENAS desta empresa
+  // Busca IDs de contatos via API de associações (GET, sem body)
   let allContacts=[];
   try{
-    const cd2=await hs('POST','/crm/v3/objects/contacts/search',{
-      filterGroups:[{associatedWith:[{objectType:'companies',operator:'EQUAL',objectIdValues:[mid]}]}],
-      properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato'],limit:20
-    });
-    allContacts=cd2.results||[];
+    const assocCts=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
+    const ctIds=(assocCts.results||[]).map(r=>r.toObjectId||r.id).filter(Boolean);
+    if(ctIds.length>0){
+      const batchCts=await hs('POST','/crm/v3/objects/contacts/batch/read',{
+        inputs:ctIds.map(id=>({id:String(id)})),
+        properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']
+      });
+      allContacts=batchCts.results||[];
+    }
   }catch{}
 
   // Aplica regras — só pipelines relevantes
