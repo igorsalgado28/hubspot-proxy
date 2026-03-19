@@ -18,9 +18,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Decodifica o path (que pode conter ? e & internos)
-  const rawPath = req.query.path || '';
-  const hsPath = decodeURIComponent(rawPath);
+  // Usa o path RAW da query string sem decodificar
+  // req.query.path já é decodificado pelo Next.js — usamos a URL raw
+  const rawUrl = req.url || '';
+  const pathMatch = rawUrl.match(/[?&]path=([^&]*)/);
+  const hsPath = pathMatch ? decodeURIComponent(pathMatch[1]) : '';
+
+  if (!hsPath) return res.status(400).json({ error: 'path required' });
+
   const url = `https://api.hubapi.com/${hsPath}`;
 
   let body = undefined;
