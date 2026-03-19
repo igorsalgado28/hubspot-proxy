@@ -435,29 +435,18 @@ async function doValidate(name,domain){
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
-  // Busca empresa via POST com filtro exato
+  // Busca empresa via endpoint dedicado do proxy
   let mc=null;
-  if(cd&&!isP(cd)){
-    try{
-      const r=await hs('POST','crm/v3/objects/companies/search',{
-        filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cd}]}],
-        properties:['name','domain'],limit:1
-      });
-      if(r.results?.length)mc=r.results[0];
-    }catch{}
-  }
-  if(!mc&&cn){
-    try{
-      // Tenta nome exato, depois maiúsculas
-      for(const val of [cn, cn.toUpperCase()]){
-        const r=await hs('POST','crm/v3/objects/companies/search',{
-          filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:val}]}],
-          properties:['name','domain'],limit:1
-        });
-        if(r.results?.length){mc=r.results[0];break;}
-      }
-    }catch{}
-  }
+  try{
+    const params=new URLSearchParams();
+    if(cn)params.set('name',cn);
+    if(cd&&!isP(cd))params.set('domain',cd);
+    const r=await fetch(`${PROXY}?path=find-company&${params.toString()}`);
+    const d=await r.json();
+    if(d.id){
+      mc={id:d.id,properties:{name:d.name,domain:cd||''}};
+    }
+  }catch{}
 
   if(!mc)return{can:true,co:null,deals:[],contacts:[],blocker:null,reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
 
