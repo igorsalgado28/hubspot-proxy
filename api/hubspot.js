@@ -1,40 +1,54 @@
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };
 
+async function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk.toString('utf8'); });
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const hsPath = req.query.path || "";
+  const hsPath = req.query.path || '';
   const url = `https://api.hubapi.com/${hsPath}`;
 
-  // Lê o body raw para garantir que o JSON chega intacto
-  let rawBody = "";
-  if (["POST", "PUT", "PATCH"].includes(req.method)) {
-    rawBody = await new Promise((resolve, reject) => {
-      let data = "";
-      req.on("data", chunk => { data += chunk.toString(); });
-      req.on("end", () => resolve(data));
-      req.on("error", reject);
-    });
+  let body = undefined;
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const raw = await readBody(req);
+    if (raw && raw.trim()) {
+      try {
+        // Valida que é JSON válido antes de enviar
+        JSON.parse(raw);
+        body = raw;
+      } catch(e) {
+        return res.status(400).json({ error: 'Invalid JSON body', detail: e.message });
+      }
+    }
   }
 
   try {
     const response = await fetch(url, {
       method: req.method,
       headers: {
-        "Authorization": `Bearer ${process.env.HUBSPOT_TOKEN}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${process.env.HUBSPOT_TOKEN}`,
+        'Content-Type': 'application/json',
       },
-      ...(rawBody ? { body: rawBody } : {}),
+      ...(body ? { body } : {}),
     });
-    const data = await response.json();
+
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
     return res.status(response.status).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
