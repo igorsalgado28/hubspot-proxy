@@ -266,8 +266,11 @@ const RP=['11075625','11066130','15079182','11066999'];
 const PN={'11075625':'Pré-Vendas - Inbound','11066130':'Vendas','15079182':'BDR - Outbound','11066999':'CS / ACM'};
 
 const hs=async(m,path,body)=>{
+  // Separa o path base dos query params para evitar conflito com ?path=
   const c=path.startsWith('/')?path.slice(1):path;
-  const r=await fetch(`${PROXY}?path=${c}`,{method:m,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+  // Codifica o path inteiro (incluindo ? e & internos) para passar como valor do param path=
+  const encoded=encodeURIComponent(c);
+  const r=await fetch(`${PROXY}?path=${encoded}`,{method:m,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
   const d=await r.json();
   if(!r.ok)throw new Error(d.message||d.error||`HTTP ${r.status}`);
   return d;
