@@ -1,3 +1,11 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '2mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
@@ -15,7 +23,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.HUBSPOT_TOKEN}`,
         "Content-Type": "application/json",
       },
-      ...(["POST","PUT","PATCH"].includes(req.method) && req.body
+      ...(["POST", "PUT", "PATCH"].includes(req.method) && req.body
         ? { body: JSON.stringify(req.body) }
         : {}),
     });
