@@ -1,8 +1,6 @@
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '2mb',
-    },
+    bodyParser: false,
   },
 };
 
@@ -16,6 +14,17 @@ export default async function handler(req, res) {
   const hsPath = req.query.path || "";
   const url = `https://api.hubapi.com/${hsPath}`;
 
+  // Lê o body raw para garantir que o JSON chega intacto
+  let rawBody = "";
+  if (["POST", "PUT", "PATCH"].includes(req.method)) {
+    rawBody = await new Promise((resolve, reject) => {
+      let data = "";
+      req.on("data", chunk => { data += chunk.toString(); });
+      req.on("end", () => resolve(data));
+      req.on("error", reject);
+    });
+  }
+
   try {
     const response = await fetch(url, {
       method: req.method,
@@ -23,9 +32,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.HUBSPOT_TOKEN}`,
         "Content-Type": "application/json",
       },
-      ...(["POST", "PUT", "PATCH"].includes(req.method) && req.body
-        ? { body: JSON.stringify(req.body) }
-        : {}),
+      ...(rawBody ? { body: rawBody } : {}),
     });
     const data = await response.json();
     return res.status(response.status).json(data);
