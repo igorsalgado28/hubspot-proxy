@@ -266,9 +266,7 @@ const RP=['11075625','11066130','15079182','11066999'];
 const PN={'11075625':'Pré-Vendas - Inbound','11066130':'Vendas','15079182':'BDR - Outbound','11066999':'CS / ACM'};
 
 const hs=async(m,path,body)=>{
-  // Separa o path base dos query params para evitar conflito com ?path=
   const c=path.startsWith('/')?path.slice(1):path;
-  // Codifica o path inteiro (incluindo ? e & internos) para passar como valor do param path=
   const encoded=encodeURIComponent(c);
   const r=await fetch(`${PROXY}?path=${encoded}`,{method:m,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
   const d=await r.json();
@@ -285,27 +283,22 @@ const findCo=async(name,domain)=>{
   const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
   const cn=(name||'').trim();
   try{
-    // Busca via GET com query — não usa body, funciona 100% via proxy
     const query=cd&&!isP(cd)?cd:cn;
     const d=await hs('GET',`/crm/v3/objects/companies?limit=10&properties=name,domain&query=${encodeURIComponent(query)}`);
     const results=d.results||[];
     if(!results.length)return null;
     const nL=cn.toLowerCase();
-    // Prioridade 1: domínio exato
     if(cd&&!isP(cd)){
       const m=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd);
       if(m)return m.id;
     }
-    // Prioridade 2: nome exato (case insensitive)
     const m2=results.find(c=>(c.properties?.name||'').toLowerCase()===nL);
     if(m2)return m2.id;
-    // Prioridade 3: nome sem caracteres especiais
     const m3=results.find(c=>{
       const cN=(c.properties?.name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
       return cN===nL.replace(/[^a-z0-9]/g,'');
     });
     if(m3)return m3.id;
-    // Prioridade 4: nome contém ou é contido (mínimo 4 chars)
     const m4=results.find(c=>{
       const cN=(c.properties?.name||'').toLowerCase();
       return(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
@@ -374,14 +367,10 @@ async function createDeal(){
     const pipe=document.getElementById('d-pipe').value,p=PIPES[pipe];
     const owner=document.getElementById('d-owner').value.trim();
     const companyField=document.getElementById('d-company').value.trim();
-    // Extrai domínio se o campo empresa tiver um domínio
     const domain=(companyField.includes('.')?companyField:'').replace(/^@/,'').trim();
-    // Para busca de empresa: usa campo empresa se preenchido, senão usa o nome do negócio
     const searchName=companyField&&!companyField.includes('.')?companyField:name;
     const ownerId=await findOwner(owner);
-    // Busca empresa por nome EXATO ou domínio EXATO
     const coId=await findCo(searchName,domain);
-    // Busca contatos pelo domínio se fornecido
     const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
     const props={dealname:name,pipeline:pipe,dealstage:p.ds,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
     const amt=document.getElementById('d-amount').value,obs=document.getElementById('d-obs').value;
@@ -429,6 +418,7 @@ async function createContact(){
 }
 
 // ── VALIDATE LOGIC ──
+// ✅ MUDANÇA PRINCIPAL: agora coleta TODOS os blockers em vez de parar no primeiro
 async function doValidate(name,domain){
   const today=new Date(),d90=new Date(today-90*24*60*60*1000),d30=new Date(today-30*24*60*60*1000);
   const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
@@ -448,17 +438,16 @@ async function doValidate(name,domain){
     }
   }catch{}
 
-  if(!mc)return{can:true,co:null,deals:[],contacts:[],blocker:null,reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
+  if(!mc)return{can:true,co:null,deals:[],contacts:[],blockers:[],reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
 
   const mid=parseInt(mc.id);
 
-  // Busca negócios via GET (sem body — evita problema do proxy)
+  // Busca negócios via associações
   let allDeals=[];
   try{
     const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
     const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
     if(ids.length){
-      // Busca em lotes de 10 para não sobrecarregar
       for(let i=0;i<ids.length;i+=10){
         const batch=ids.slice(i,i+10);
         try{
@@ -472,7 +461,7 @@ async function doValidate(name,domain){
     }
   }catch(e){console.error('assoc deals error',e.message);}
 
-  // Busca contatos via GET (sem body)
+  // Busca contatos via associações
   let allContacts=[];
   try{
     const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
@@ -486,48 +475,84 @@ async function doValidate(name,domain){
     }
   }catch{}
 
-  // Aplica regras — só pipelines relevantes
-  let blocker=null;
+  // ✅ MUDANÇA: coleta TODOS os blockers sem parar no primeiro
+  const blockers=[];
   const relDeals=allDeals.filter(d=>RP.includes(d.properties.pipeline));
 
   for(const deal of relDeals){
     const p=deal.properties,sL=(p.status_do_negocio||'').toLowerCase(),cL=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
     const pipe=PN[p.pipeline]||p.pipeline,link=`https://app.hubspot.com/contacts/${AID}/record/0-3/${deal.id}`;
-    // Regra 1: aberto
-    if(sL==='aberto'){blocker={rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link};break;}
+
+    // Regra 1: negócio em aberto
+    if(sL==='aberto'){
+      blockers.push({rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link});
+      continue; // esse deal já bloqueou, não precisa checar outras regras nele
+    }
     // Regra 2: cliente ativo
-    if(cL==='cliente'&&sL!=='perdido'){blocker={rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link};break;}
-    // Regra 3: ex-cliente churn ≤ 90 dias
-    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){const ch=new Date(p.data_de_churn);if(ch>=d90){blocker={rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias).`,link};break;}}
+    if(cL==='cliente'&&sL!=='perdido'){
+      blockers.push({rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link});
+      continue;
+    }
+    // Regra 3: ex-cliente com churn ≤ 90 dias
+    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){
+      const ch=new Date(p.data_de_churn);
+      if(ch>=d90){
+        blockers.push({rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias): ${p.dealname}`,link});
+        continue;
+      }
+    }
     // Regra 4: perdido ≤ 30 dias
-    if(sL==='perdido'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blocker={rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link};break;}}
-  }
-  if(!blocker){
-    for(const c of allContacts){
-      if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){blocker={rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`};break;}
+    if(sL==='perdido'&&p.closedate){
+      const cl=new Date(p.closedate);
+      if(cl>=d30){
+        blockers.push({rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});
+      }
     }
   }
-  return{can:!blocker,co:mc,deals:allDeals,contacts:allContacts,blocker,relDeals};
+
+  // Regra 5: contatos marcados como cliente ativo
+  for(const c of allContacts){
+    if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){
+      blockers.push({rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`});
+    }
+  }
+
+  // Mantém compatibilidade com código legado que usa r.blocker (pega o primeiro se houver)
+  const blocker=blockers.length>0?blockers[0]:null;
+
+  return{can:blockers.length===0,co:mc,deals:allDeals,contacts:allContacts,blocker,blockers,relDeals};
 }
 
 function renderValidate(cid,name,domain,r){
   const fmt=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
   const hl=(id,type,label)=>`<a class="vl" href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank">${label}</a>`;
   const blockers=r.blockers||[];
+
+  // ✅ Card de veredicto com TODOS os motivos listados quando não pode prospectar
   const verdict=r.can
-    ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60"><div class="vv-icon">✅</div><div class="vv-title" style="color:#276749">Pode Prospectar</div></div>`
-    :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c">
-        <div class="vv-icon">❌</div>
-        <div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+    ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60">
+        <div class="vv-icon">✅</div>
+        <div class="vv-title" style="color:#276749">Pode Prospectar</div>
+      </div>`
+    :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c;text-align:left">
+        <div style="text-align:center;margin-bottom:16px">
+          <div class="vv-icon">❌</div>
+          <div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
           ${blockers.map((b,i)=>`
-            <div style="background:#fff;border:1px solid #fc8181;border-radius:10px;padding:10px 14px;text-align:left">
-              <div style="font-size:13px;font-weight:700;color:#c53030;margin-bottom:4px">Motivo ${blockers.length>1?i+1+':':''}</div>
-              <div style="font-size:13px;color:#333">${b.msg}</div>
-              ${b.link?`<div style="margin-top:6px">${hl(b.link.split('/').pop(),'0-3','🔗 Ver negócio')}</div>`:''}
+            <div style="background:#fff;border:1px solid #fc8181;border-radius:10px;padding:10px 14px">
+              <div style="font-size:12px;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">
+                ${blockers.length>1?`Motivo ${i+1}`:'Motivo'}
+              </div>
+              <div style="font-size:13px;color:#333;line-height:1.5">${b.msg}</div>
+              ${b.link?`<div style="margin-top:6px">
+                <a class="vl" href="${b.link}" target="_blank">🔗 Ver negócio</a>
+              </div>`:''}
             </div>`).join('')}
         </div>
       </div>`;
+
   const reason=r.reason?`<div style="background:#f7f7f7;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;color:#555">${r.reason}</div>`:'';
   const summary=`<div class="vs">
     <div class="vs-c"><div class="n">${r.co?1:0}</div><div class="l">EMPRESA</div></div>
@@ -649,10 +674,22 @@ async function runBulkValidate(){
     const{name,domain}=rows[i];
     try{
       const r=await doValidate(name,domain);
-      results.push({empresa:name||domain,dominio:domain||'—',status:r.can?'✅ Pode Prospectar':'❌ Não Pode',motivo:r.can?'Sem bloqueios ativos':(r.blocker?.msg||r.reason||'Ver detalhes'),link:r.blocker?.link||(r.co?`https://app.hubspot.com/contacts/${AID}/record/0-2/${r.co.id}`:'')});
+      // ✅ MUDANÇA: concatena TODOS os motivos na coluna "Motivo" da tabela em massa
+      const todosMotivos=r.blockers&&r.blockers.length>0
+        ?r.blockers.map((b,i)=>r.blockers.length>1?`${i+1}. ${b.msg}`:b.msg).join(' | ')
+        :(r.reason||'Sem bloqueios ativos');
+      results.push({
+        empresa:name||domain,
+        dominio:domain||'—',
+        status:r.can?'✅ Pode Prospectar':'❌ Não Pode',
+        motivo:todosMotivos,
+        link:r.blockers&&r.blockers.length>0
+          ?r.blockers[0].link||''
+          :(r.co?`https://app.hubspot.com/contacts/${AID}/record/0-2/${r.co.id}`:'')
+      });
     }catch(e){results.push({empresa:name||domain,dominio:domain||'—',status:'❌ Erro',motivo:e.message,link:''});}
     upProg('vb',i+1,rows.length);
-    renderTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo',w:60,mw:300},{key:'link',label:'Link',w:50}]);
+    renderTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo(s)',w:60,mw:300},{key:'link',label:'Link',w:50}]);
   }
   setB('vb-btn',false,'🔍 Validar Empresas');
 }
