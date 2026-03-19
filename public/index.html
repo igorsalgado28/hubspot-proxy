@@ -513,11 +513,20 @@ async function doValidate(name,domain){
 function renderValidate(cid,name,domain,r){
   const fmt=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
   const hl=(id,type,label)=>`<a class="vl" href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank">${label}</a>`;
+  const blockers=r.blockers||[];
   const verdict=r.can
     ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60"><div class="vv-icon">✅</div><div class="vv-title" style="color:#276749">Pode Prospectar</div></div>`
-    :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c"><div class="vv-icon">❌</div><div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
-       <div class="vv-msg" style="color:#c53030">${r.blocker?.msg||''}</div>
-       ${r.blocker?.link?`<div style="margin-top:8px">${hl(r.blocker.link.split('/').pop(),'0-3','🔗 Ver negócio')}</div>`:''}
+    :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c">
+        <div class="vv-icon">❌</div>
+        <div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          ${blockers.map((b,i)=>`
+            <div style="background:#fff;border:1px solid #fc8181;border-radius:10px;padding:10px 14px;text-align:left">
+              <div style="font-size:13px;font-weight:700;color:#c53030;margin-bottom:4px">Motivo ${blockers.length>1?i+1+':':''}</div>
+              <div style="font-size:13px;color:#333">${b.msg}</div>
+              ${b.link?`<div style="margin-top:6px">${hl(b.link.split('/').pop(),'0-3','🔗 Ver negócio')}</div>`:''}
+            </div>`).join('')}
+        </div>
       </div>`;
   const reason=r.reason?`<div style="background:#f7f7f7;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;color:#555">${r.reason}</div>`:'';
   const summary=`<div class="vs">
