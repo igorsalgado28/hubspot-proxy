@@ -435,26 +435,26 @@ async function doValidate(name,domain){
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
-  // Busca empresa via GET com query — sem body, funciona 100% via proxy
+  // Busca empresa via POST com filtro exato
   let mc=null;
-  const query=cd&&!isP(cd)?cd:cn;
-  if(query){
+  if(cd&&!isP(cd)){
     try{
-      const d=await hs('GET',`/crm/v3/objects/companies?limit=10&properties=name,domain&query=${encodeURIComponent(query)}`);
-      const results=d.results||[];
-      // Prioridade: domínio exato → nome exato → nome similar
-      if(cd&&!isP(cd)){
-        mc=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd)||null;
-      }
-      if(!mc&&cn){
-        const nL=cn.toLowerCase();
-        mc=results.find(c=>{
-          const cN=(c.properties?.name||'').toLowerCase();
-          return cN===nL||
-                 cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||
-                 (cN.includes(nL)&&nL.length>=5)||
-                 (nL.includes(cN)&&cN.length>=5);
-        })||null;
+      const r=await hs('POST','crm/v3/objects/companies/search',{
+        filterGroups:[{filters:[{propertyName:'domain',operator:'EQ',value:cd}]}],
+        properties:['name','domain'],limit:1
+      });
+      if(r.results?.length)mc=r.results[0];
+    }catch{}
+  }
+  if(!mc&&cn){
+    try{
+      // Tenta nome exato, depois maiúsculas
+      for(const val of [cn, cn.toUpperCase()]){
+        const r=await hs('POST','crm/v3/objects/companies/search',{
+          filterGroups:[{filters:[{propertyName:'name',operator:'EQ',value:val}]}],
+          properties:['name','domain'],limit:1
+        });
+        if(r.results?.length){mc=r.results[0];break;}
       }
     }catch{}
   }
