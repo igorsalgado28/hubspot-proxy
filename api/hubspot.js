@@ -18,7 +18,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const hsPath = req.query.path || '';
+  // Decodifica o path (que pode conter ? e & internos)
+  const rawPath = req.query.path || '';
+  const hsPath = decodeURIComponent(rawPath);
   const url = `https://api.hubapi.com/${hsPath}`;
 
   let body = undefined;
@@ -26,11 +28,10 @@ export default async function handler(req, res) {
     const raw = await readBody(req);
     if (raw && raw.trim()) {
       try {
-        // Valida que é JSON válido antes de enviar
         JSON.parse(raw);
         body = raw;
       } catch(e) {
-        return res.status(400).json({ error: 'Invalid JSON body', detail: e.message });
+        return res.status(400).json({ error: 'Invalid JSON', detail: e.message });
       }
     }
   }
@@ -48,7 +49,6 @@ export default async function handler(req, res) {
     const text = await response.text();
     let data;
     try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
     return res.status(response.status).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
