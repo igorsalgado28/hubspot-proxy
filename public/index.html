@@ -281,31 +281,34 @@ const findCo=async(name,domain)=>{
   const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
   const cn=(name||'').trim();
   try{
-    // 1. Domínio exato via GET — mais preciso
+    // Busca via GET com query — não usa body, funciona 100% via proxy
+    const query=cd&&!isP(cd)?cd:cn;
+    const d=await hs('GET',`/crm/v3/objects/companies?limit=10&properties=name,domain&query=${encodeURIComponent(query)}`);
+    const results=d.results||[];
+    if(!results.length)return null;
+    const nL=cn.toLowerCase();
+    // Prioridade 1: domínio exato
     if(cd&&!isP(cd)){
-      const d=await hs('GET',`/crm/v3/objects/companies?limit=5&properties=name,domain`);
-      // Fallback: busca via query
-      const d2=await hs('GET',`/crm/v3/objects/companies?limit=5&properties=name,domain&query=${encodeURIComponent(cd)}`);
-      const match=(d2.results||[]).find(c=>(c.properties?.domain||'').toLowerCase()===cd);
-      if(match)return match.id;
+      const m=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd);
+      if(m)return m.id;
     }
-    // 2. Nome via query GET
-    if(cn){
-      const d=await hs('GET',`/crm/v3/objects/companies?limit=10&properties=name,domain&query=${encodeURIComponent(cn)}`);
-      const nL=cn.toLowerCase();
-      const match=(d.results||[]).find(c=>{
-        const cN=(c.properties?.name||'').toLowerCase();
-        const cD=(c.properties?.domain||'').toLowerCase();
-        if(cd&&cD===cd)return true;
-        return cN===nL||
-               cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||
-               (cN.includes(nL)&&nL.length>=3)||
-               (nL.includes(cN)&&cN.length>=3);
-      });
-      if(match)return match.id;
-    }
+    // Prioridade 2: nome exato (case insensitive)
+    const m2=results.find(c=>(c.properties?.name||'').toLowerCase()===nL);
+    if(m2)return m2.id;
+    // Prioridade 3: nome sem caracteres especiais
+    const m3=results.find(c=>{
+      const cN=(c.properties?.name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      return cN===nL.replace(/[^a-z0-9]/g,'');
+    });
+    if(m3)return m3.id;
+    // Prioridade 4: nome contém ou é contido (mínimo 4 chars)
+    const m4=results.find(c=>{
+      const cN=(c.properties?.name||'').toLowerCase();
+      return(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
+    });
+    if(m4)return m4.id;
     return null;
-  }catch(e){console.error('findCo error',e.message);return null;}
+  }catch(e){console.error('findCo',e.message);return null;}
 };
 const findCtsByDomain=async domain=>{
   if(!domain||isP(domain))return[];
@@ -424,26 +427,27 @@ async function doValidate(name,domain){
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
-  // Busca empresa via GET (sem body)
+  // Busca empresa via GET com query — sem body, funciona 100% via proxy
   let mc=null;
-  if(cd&&!isP(cd)){
+  const query=cd&&!isP(cd)?cd:cn;
+  if(query){
     try{
-      const d=await hs('GET',`/crm/v3/objects/companies?limit=1&properties=name,domain&query=${encodeURIComponent(cd)}`);
-      const match=(d.results||[]).find(c=>(c.properties?.domain||'').toLowerCase()===cd);
-      if(match)mc=match;
-    }catch{}
-  }
-  if(!mc&&cn){
-    try{
-      const d=await hs('GET',`/crm/v3/objects/companies?limit=5&properties=name,domain&query=${encodeURIComponent(cn)}`);
-      const nL=cn.toLowerCase();
-      const match=(d.results||[]).find(c=>{
-        const cN=(c.properties?.name||'').toLowerCase();
-        const cD=(c.properties?.domain||'').toLowerCase();
-        if(cd&&cD===cd)return true;
-        return cN===nL||cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||(cN.includes(nL)&&nL.length>=5)||(nL.includes(cN)&&cN.length>=5);
-      });
-      if(match)mc=match;
+      const d=await hs('GET',`/crm/v3/objects/companies?limit=10&properties=name,domain&query=${encodeURIComponent(query)}`);
+      const results=d.results||[];
+      // Prioridade: domínio exato → nome exato → nome similar
+      if(cd&&!isP(cd)){
+        mc=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd)||null;
+      }
+      if(!mc&&cn){
+        const nL=cn.toLowerCase();
+        mc=results.find(c=>{
+          const cN=(c.properties?.name||'').toLowerCase();
+          return cN===nL||
+                 cN.replace(/[^a-z0-9]/g,'')===nL.replace(/[^a-z0-9]/g,'')||
+                 (cN.includes(nL)&&nL.length>=5)||
+                 (nL.includes(cN)&&cN.length>=5);
+        })||null;
+      }
     }catch{}
   }
 
