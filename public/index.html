@@ -368,12 +368,16 @@ async function createDeal(){
   setB('d-btn',true,'');
   try{
     const pipe=document.getElementById('d-pipe').value,p=PIPES[pipe];
-    const owner=document.getElementById('d-owner').value.trim(),company=document.getElementById('d-company').value.trim();
-    // Extrai domínio do campo empresa se for um domínio, senão usa o nome do negócio como fallback para busca
-    const domain=company.includes('.')?company:'';
-    const searchName=company||name; // usa empresa se preenchido, senão usa nome do negócio
+    const owner=document.getElementById('d-owner').value.trim();
+    const companyField=document.getElementById('d-company').value.trim();
+    // Extrai domínio se o campo empresa tiver um domínio
+    const domain=(companyField.includes('.')?companyField:'').replace(/^@/,'').trim();
+    // Para busca de empresa: usa campo empresa se preenchido, senão usa o nome do negócio
+    const searchName=companyField&&!companyField.includes('.')?companyField:name;
     const ownerId=await findOwner(owner);
+    // Busca empresa por nome EXATO ou domínio EXATO
     const coId=await findCo(searchName,domain);
+    // Busca contatos pelo domínio se fornecido
     const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
     const props={dealname:name,pipeline:pipe,dealstage:p.ds,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
     const amt=document.getElementById('d-amount').value,obs=document.getElementById('d-obs').value;
