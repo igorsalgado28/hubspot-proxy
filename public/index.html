@@ -855,27 +855,36 @@ function hasToken(text,token){
 // Detecta owner mencionado
 function findOwnerInText(text,owners){
   const t=norm(text);
-  // Prioridade 1: nome completo exato (ex: "caue dias", "beatriz gouveia")
+
+  // Prioridade 1: nome completo normalizado exato
+  // Ex: "beatriz gouveia" bate exatamente com o owner Beatriz Gouveia
   for(const o of owners){
     const full=norm((o.firstName||'')+' '+(o.lastName||''));
     if(full.length>3&&(' '+t+' ').includes(' '+full+' '))return o;
   }
-  // Prioridade 2: sobrenome com 5+ chars — só aceita se sobrenome aparecer isolado no texto
-  // E o primeiro nome também aparecer (reduz falsos positivos)
+
+  // Prioridade 2: primeiro nome + sobrenome ambos presentes no texto
+  // Ex: "beatriz gouveia" → testa se "beatriz" E "gouveia" estão no texto
+  for(const o of owners){
+    const first=norm(o.firstName||'');
+    const last=norm(o.lastName||'');
+    if(first.length>=4&&last.length>=4&&hasToken(t,first)&&hasToken(t,last))return o;
+  }
+
+  // Prioridade 3: sobrenome único (7+ chars) isolado no texto
+  // Ex: "quaresma" aparece sozinho → bate em Vitor Quaresma
   for(const o of owners){
     const last=norm(o.lastName||'');
-    const first=norm(o.firstName||'');
-    if(last.length>=5&&hasToken(t,last)){
-      // Valida: primeiro nome também precisa estar presente ou sobrenome é único o suficiente (8+ chars)
-      if(last.length>=8||hasToken(t,first))return o;
-    }
+    if(last.length>=7&&hasToken(t,last))return o;
   }
-  // Prioridade 3: só pelo primeiro nome — exige 5+ chars E que seja nome raro (não genérico)
-  const genericNames=['joao','jose','ana','maria','paulo','lucas','pedro','carlos','marcos'];
+
+  // Prioridade 4: primeiro nome único (6+ chars) que não seja genérico
+  const genericNames=['joao','jose','ana','maria','paulo','lucas','pedro','carlos','marcos','beatriz','vitor','caue','igor','nayara'];
   for(const o of owners){
     const first=norm(o.firstName||'');
-    if(first.length>=5&&!genericNames.includes(first)&&hasToken(t,first))return o;
+    if(first.length>=6&&!genericNames.includes(first)&&hasToken(t,first))return o;
   }
+
   return null;
 }
 
