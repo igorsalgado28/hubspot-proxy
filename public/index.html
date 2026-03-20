@@ -537,6 +537,9 @@ async function doValidate(name,domain){
   const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
+
+  // ── ESTRATÉGIA DUPLA: busca por empresa E por dealname ──
+  // Passo 1: Tenta encontrar a empresa pelo proxy (best effort)
   let mc=null;
   try{
     const params=new URLSearchParams();
@@ -544,41 +547,146 @@ async function doValidate(name,domain){
     if(cd&&!isP(cd))params.set('domain',cd);
     const r=await fetch(`${PROXY}?path=find-company&${params.toString()}`);
     const d=await r.json();
-    if(d.id){mc={id:d.id,properties:{name:d.name,domain:cd||''}};}
+    if(d.id)mc={id:d.id,properties:{name:d.name,domain:cd||''}};
   }catch{}
-  if(!mc)return{can:true,co:null,deals:[],contacts:[],blockers:[],reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
-  const mid=parseInt(mc.id);
+
+  // Também tenta busca direta da empresa pelo Search API (mais confiável)
+  if(!mc&&cn){
+    try{
+      const d=await hs('POST','/crm/v3/objects/companies/search',{
+        filterGroups:[{filters:[{propertyName:'name',operator:'CONTAINS_TOKEN',value:cn}]}],
+        properties:['name','domain'],limit:5
+      });
+      const results=d.results||[];
+      const cnL=cn.toLowerCase();
+      // Tenta match exato primeiro, depois parcial
+      const exact=results.find(c=>(c.properties.name||'').toLowerCase()===cnL);
+      const partial=results.find(c=>{
+        const n=(c.properties.name||'').toLowerCase();
+        return n.includes(cnL)||cnL.includes(n);
+      });
+      const found=exact||partial;
+      if(found)mc={id:found.id,properties:{name:found.properties.name,domain:found.properties.domain||cd||''}};
+    }catch{}
+  }
+
+  // Passo 2: Busca deals diretamente por dealname CONTAINS o nome da empresa
+  // Isso garante encontrar negócios mesmo sem empresa associada
   let allDeals=[];
-  try{
-    const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
-    const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
-    if(ids.length){
-      for(let i=0;i<ids.length;i+=10){
-        const batch=ids.slice(i,i+10);
-        try{const r=await hs('POST','/crm/v3/objects/deals/batch/read',{inputs:batch.map(id=>({id:String(id)})),properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']});allDeals.push(...(r.results||[]));}catch{}
+  const dealSearchTerms=[cn];
+  // Se tiver domínio, adiciona a parte principal como termo de busca
+  if(cd&&!isP(cd))dealSearchTerms.push(cd.split('.')[0]);
+
+  for(const term of dealSearchTerms){
+    if(!term||term.length<3)continue;
+    try{
+      const d=await hs('POST','/crm/v3/objects/deals/search',{
+        filterGroups:[{filters:[
+          {propertyName:'dealname',operator:'CONTAINS_TOKEN',value:term},
+          {propertyName:'pipeline',operator:'IN',values:RP}
+        ]}],
+        properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate'],
+        limit:100,
+        sorts:[{propertyName:'createdate',direction:'DESCENDING'}]
+      });
+      const newDeals=(d.results||[]).filter(nd=>!allDeals.some(ed=>ed.id===nd.id));
+      allDeals.push(...newDeals);
+    }catch(e){console.error('dealname search error',e.message);}
+  }
+
+  // Passo 3: Se encontrou empresa, busca também deals por associação (complementa)
+  if(mc){
+    try{
+      const assoc=await hs('GET',`/crm/v4/objects/companies/${mc.id}/associations/deals?limit=100`);
+      const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
+      if(ids.length){
+        for(let i=0;i<ids.length;i+=10){
+          const batch=ids.slice(i,i+10);
+          try{
+            const r=await hs('POST','/crm/v3/objects/deals/batch/read',{
+              inputs:batch.map(id=>({id:String(id)})),
+              properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']
+            });
+            // Adiciona apenas deals que ainda não estão na lista e são dos pipelines relevantes
+            const newDeals=(r.results||[]).filter(nd=>
+              RP.includes(nd.properties.pipeline)&&!allDeals.some(ed=>ed.id===nd.id)
+            );
+            allDeals.push(...newDeals);
+          }catch{}
+        }
       }
-    }
-  }catch(e){console.error('assoc deals error',e.message);}
+    }catch{}
+  }
+
+  // Se não achou empresa E não achou deals, retorna pode prospectar
+  if(!mc&&!allDeals.length){
+    return{can:true,co:null,deals:[],contacts:[],blockers:[],reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
+  }
+
+  // Busca contatos da empresa (se encontrou empresa)
   let allContacts=[];
-  try{
-    const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
-    const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
-    if(ids.length){const r=await hs('POST','/crm/v3/objects/contacts/batch/read',{inputs:ids.map(id=>({id:String(id)})),properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']});allContacts=r.results||[];}
-  }catch{}
-  const blockers=[];
+  if(mc){
+    try{
+      const assoc=await hs('GET',`/crm/v4/objects/companies/${mc.id}/associations/contacts?limit=20`);
+      const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
+      if(ids.length){
+        const r=await hs('POST','/crm/v3/objects/contacts/batch/read',{
+          inputs:ids.map(id=>({id:String(id)})),
+          properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']
+        });
+        allContacts=r.results||[];
+      }
+    }catch{}
+  }
+
+  // ── REGRAS DE BLOQUEIO com DEDUPLICAÇÃO ──
+  // Cada rule só aparece UMA VEZ — guarda o primeiro exemplo de cada tipo
+  const blockersMap={};// key=rule, value=blocker
   const relDeals=allDeals.filter(d=>RP.includes(d.properties.pipeline));
+
   for(const deal of relDeals){
     const p=deal.properties,sL=(p.status_do_negocio||'').toLowerCase(),cL=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
     const pipe=PN[p.pipeline]||p.pipeline,link=`https://app.hubspot.com/contacts/${AID}/record/0-3/${deal.id}`;
-    if(sL==='aberto'){blockers.push({rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link});continue;}
-    if(cL==='cliente'&&sL!=='perdido'){blockers.push({rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link});continue;}
-    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){const ch=new Date(p.data_de_churn);if(ch>=d90){blockers.push({rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias): ${p.dealname}`,link});continue;}}
-    if(sL==='perdido'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blockers.push({rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});continue;}}
-    if(sL==='ganho'&&p.pipeline==='11075625'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blockers.push({rule:'sql_recente',msg:`SQL gerado recentemente — negócio ganho no pipeline "Pré-Vendas - Inbound" em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});}}
+
+    // Regra 1: negócio em aberto — guarda só o primeiro encontrado
+    if(sL==='aberto'&&!blockersMap['aberto']){
+      blockersMap['aberto']={rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link};
+      continue;
+    } else if(sL==='aberto') continue;
+
+    // Regra 2: cliente ativo
+    if(cL==='cliente'&&sL!=='perdido'&&!blockersMap['cliente']){
+      blockersMap['cliente']={rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link};
+      continue;
+    } else if(cL==='cliente'&&sL!=='perdido') continue;
+
+    // Regra 3: churn recente ≤ 90 dias
+    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn&&!blockersMap['churn']){
+      const ch=new Date(p.data_de_churn);
+      if(ch>=d90){blockersMap['churn']={rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias): ${p.dealname}`,link};continue;}
+    }
+
+    // Regra 4: perdido ≤ 30 dias
+    if(sL==='perdido'&&p.closedate&&!blockersMap['perdido_recente']){
+      const cl=new Date(p.closedate);
+      if(cl>=d30){blockersMap['perdido_recente']={rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link};continue;}
+    }
+
+    // Regra 5: SQL recente (ganho no Pré-Vendas ≤ 30 dias)
+    if(sL==='ganho'&&p.pipeline==='11075625'&&p.closedate&&!blockersMap['sql_recente']){
+      const cl=new Date(p.closedate);
+      if(cl>=d30)blockersMap['sql_recente']={rule:'sql_recente',msg:`SQL gerado recentemente — negócio ganho no pipeline "Pré-Vendas - Inbound" em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link};
+    }
   }
+
+  // Regra 6: contato cliente ativo — só um motivo por regra
   for(const c of allContacts){
-    if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){blockers.push({rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`});}
+    if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'&&!blockersMap['contato_cliente']){
+      blockersMap['contato_cliente']={rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`};
+    }
   }
+
+  const blockers=Object.values(blockersMap);
   const blocker=blockers.length>0?blockers[0]:null;
   return{can:blockers.length===0,co:mc,deals:allDeals,contacts:allContacts,blocker,blockers,relDeals};
 }
