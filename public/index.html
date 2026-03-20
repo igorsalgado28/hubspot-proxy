@@ -927,17 +927,17 @@ function findPeriodInText(text){
   if(/mes passado/.test(t)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'mês passado'};}
   if(/ano passado/.test(t)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'ano passado'};}
   if(/esse ano|este ano|ano atual/.test(t)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime(),label:'esse ano'};}
-  // Meses nomeados — detecta "em janeiro", "de fevereiro", "no mes de março", etc.
+  // Meses nomeados — detecta "em janeiro", "de fevereiro", etc.
   const meses={janeiro:0,fevereiro:1,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
-  for(const[nome,idx] of Object.entries(meses)){
+  for(const[nome,midx] of Object.entries(meses)){
     if(t.includes(nome)){
-      // Detecta ano junto se mencionado (ex: "fevereiro de 2025")
-      const anoMatch=t.match(new RegExp(nome+'\\s+de\\s+(20\\d{2})'));
-      const ano=anoMatch?parseInt(anoMatch[1]):now.getFullYear();
-      // Se o mês já passou esse ano, assume esse ano; se não, assume ano passado
-      const refAno=(idx>now.getMonth()&&ano===now.getFullYear())?ano-1:ano;
-      const s=new Date(refAno,idx,1);
-      const e=new Date(refAno,idx+1,0,23,59,59);
+      // Detecta ano explícito no texto (ex: "fevereiro 2024" ou "fevereiro de 2024")
+      const anoMatch=t.match(/20(\d{2})/);
+      const ano=anoMatch?parseInt('20'+anoMatch[1]):now.getFullYear();
+      // Se o mês ainda não chegou esse ano e nenhum ano foi mencionado, usa ano passado
+      const refAno=(midx>now.getMonth()&&!anoMatch)?ano-1:ano;
+      const s=new Date(refAno,midx,1);
+      const e=new Date(refAno,midx+1,0,23,59,59);
       return{after:s.getTime(),before:e.getTime(),label:`${nome} de ${refAno}`};
     }
   }
@@ -1300,7 +1300,7 @@ async function processChat(question){
 
   // ── Busca e renderiza ──
   const data=await buildAndFetch(question);
-  return buildReply(question,data);
+  return await buildReply(question,data);
 }
 
 // Trata resposta quando usuário clicar nos botões de ambiguidade
@@ -1316,7 +1316,8 @@ async function respondAmbiguous(choice){
     else pipes=['11066130','11066999'];
     const data=await buildAndFetch(q,pipes);
     removeTyping();
-    addCMsg('bot',await buildReply(q,data));
+    const replyHtml=await buildReply(q,data);
+    addCMsg('bot',replyHtml);
   }catch(e){removeTyping();addCMsg('bot',`<span style="color:#e74c3c">⚠️ Erro: ${e.message}</span>`);}
   chatBusy=false;document.getElementById('chat-send').disabled=false;
 }
