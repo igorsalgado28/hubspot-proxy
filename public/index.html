@@ -699,7 +699,7 @@ async function runBulkValidate(){
    CHAT COM O HUB — 100% HubSpot API, sem Claude API
 ══════════════════════════════════════════════════════ */
 
-// Cache de owners carregado uma vez
+// Cache de owners
 let _ownersCache=null;
 async function getOwners(){
   if(_ownersCache)return _ownersCache;
@@ -707,216 +707,245 @@ async function getOwners(){
   return _ownersCache;
 }
 
-// Normaliza string: minúsculo + sem acentos
-const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,' ').trim();
+// Normaliza: minúsculo + sem acentos + espaço simples
+function norm(s){
+  return String(s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
 
-// Mapas de palavras-chave NORMALIZADAS → IDs de pipeline
-const PIPE_KW={
-  'pre-vendas':['11075625'],'pre vendas':['11075625'],'inbound':['11075625'],'pre venda':['11075625'],
-  'bdr':['15079182'],'outbound':['15079182'],
-  'cs':['11066999'],'acm':['11066999'],
-  'hunter':['663181378'],
-  'scooto':['15000484'],
-  'parcerias':['11847207'],
-  'self trial':['37990225']
-};
-// "vendas" tratado separado para não colidir com "pre-vendas"
+// Testa se uma palavra aparece como token isolado no texto normalizado
+function hasToken(text,token){
+  if(!token||token.length<2)return false;
+  const t=norm(text), k=norm(token);
+  // Adiciona espaço em volta para garantir que é palavra inteira
+  return(' '+t+' ').includes(' '+k+' ');
+}
 
-// Mapas de etapa NORMALIZADOS
-const STAGE_KW={
-  'mql':'32547660','novo contato':'32547660',
-  'validacao':'32547661',
-  'conexao':'965485473',
-  'conectado':'963329357',
-  'sal':'32547662','qualificacao':'32547662',
-  'sql':'32547663','reuniao agendada':'32547663',
-  'map necessidade':'32538778','mapeamento':'32538778',
-  'solucao':'32538779','negociacao':'32538780',
-  'contratacao':'32538781'
-};
-
-// Detecta período temporal → retorna {after?, before?} em ms — opera sobre texto normalizado
-function detectPeriod(q){
-  const now=new Date();
-  if(/\bhoje\b/.test(q)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime()};}
-  if(/essa semana|esta semana/.test(q)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime()};}
-  if(/ultimos?\s*7\s*dias?/.test(q))return{after:now.getTime()-7*86400000};
-  if(/ultimos?\s*30\s*dias?/.test(q))return{after:now.getTime()-30*86400000};
-  if(/ultimos?\s*90\s*dias?/.test(q))return{after:now.getTime()-90*86400000};
-  if(/esse mes|este mes|mes atual/.test(q)){const s=new Date(now.getFullYear(),now.getMonth(),1);return{after:s.getTime()};}
-  if(/mes passado/.test(q)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime()};}
-  if(/ano passado/.test(q)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime()};}
-  if(/esse ano|este ano|ano atual/.test(q)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime()};}
+// Detecta qual owner foi mencionado na pergunta
+function findOwnerInText(text,owners){
+  const t=norm(text);
+  // Tenta match pelo nome completo primeiro (mais preciso)
+  for(const o of owners){
+    const full=norm((o.firstName||'')+' '+(o.lastName||''));
+    if(full.length>3&&(' '+t+' ').includes(' '+full+' '))return o;
+  }
+  // Tenta por sobrenome (mín 4 chars)
+  for(const o of owners){
+    const last=norm(o.lastName||'');
+    if(last.length>=4&&hasToken(t,last))return o;
+  }
+  // Tenta por primeiro nome (mín 4 chars)
+  for(const o of owners){
+    const first=norm(o.firstName||'');
+    if(first.length>=4&&hasToken(t,first))return o;
+  }
   return null;
 }
 
-// Monta filtros — recebe a pergunta ORIGINAL (com acentos), normaliza internamente
-async function buildDealFilters(originalQ){
-  const q=norm(originalQ); // normalizado para matching
-  const filters=[];
+// Detecta pipeline mencionado
+function findPipelineInText(text){
+  const t=norm(text);
+  const pipes=[];
+  if(t.includes('pre vendas')||t.includes('pre-vendas')||t.includes('inbound')||t.includes('pre venda'))pipes.push('11075625');
+  if(/\bvendas\b/.test(t)&&!t.includes('pre vendas')&&!t.includes('pre-vendas'))pipes.push('11066130');
+  if(t.includes('bdr')||t.includes('outbound'))pipes.push('15079182');
+  if(/\bcs\b/.test(t)||t.includes(' acm'))pipes.push('11066999');
+  if(t.includes('hunter'))pipes.push('663181378');
+  if(t.includes('scooto'))pipes.push('15000484');
+  if(t.includes('parceria'))pipes.push('11847207');
+  if(t.includes('self trial'))pipes.push('37990225');
+  return[...new Set(pipes)];
+}
+
+// Detecta status mencionado
+// "ganho" e "venda" são sinônimos
+function findStatusInText(text){
+  const t=norm(text);
+  if(/\babertos?\b/.test(t))return'Aberto';
+  if(/\bganhos?\b|\bvendas?\b|\bvendido\b|\bfechados?\b/.test(t))return'Ganho';
+  if(/\bperdidos?\b/.test(t))return'Perdido';
+  return null;
+}
+
+// Detecta ICP
+function findICPInText(text){
+  const t=norm(text);
+  if(/\bpme\b/.test(t))return'PME';
+  if(/\bge\b|grande empresa|grandes empresas/.test(t))return'GE';
+  if(/\bgov\b|governo|publico|setor publico/.test(t))return'GOV';
+  return null;
+}
+
+// Detecta etapa
+function findStageInText(text){
+  const t=norm(text);
+  const map=[
+    ['novo contato','32547660'],['mql','32547660'],
+    ['validacao','32547661'],
+    ['conexao','965485473'],
+    ['conectado','963329357'],
+    ['qualificacao','32547662'],['sal','32547662'],
+    ['reuniao agendada','32547663'],['sql','32547663'],
+    ['map necessidade','32538778'],['mapeamento','32538778'],
+    ['solucao','32538779'],
+    ['negociacao','32538780'],
+    ['contratacao','32538781'],
+  ];
+  for(const[kw,id] of map){if(t.includes(kw))return id;}
+  return null;
+}
+
+// Detecta período temporal
+function findPeriodInText(text){
+  const t=norm(text);
+  const now=new Date();
+  if(/\bhoje\b/.test(t)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime(),label:'hoje'};}
+  if(/essa semana|esta semana/.test(t)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime(),label:'essa semana'};}
+  if(/ultimos?\s*7\s*dias?/.test(t))return{after:now.getTime()-7*86400000,label:'últimos 7 dias'};
+  if(/ultimos?\s*30\s*dias?/.test(t))return{after:now.getTime()-30*86400000,label:'últimos 30 dias'};
+  if(/ultimos?\s*90\s*dias?/.test(t))return{after:now.getTime()-90*86400000,label:'últimos 90 dias'};
+  if(/esse mes|este mes|mes atual/.test(t)){const s=new Date(now.getFullYear(),now.getMonth(),1);return{after:s.getTime(),label:'esse mês'};}
+  if(/mes passado/.test(t)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'mês passado'};}
+  if(/ano passado/.test(t)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'ano passado'};}
+  if(/esse ano|este ano|ano atual/.test(t)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime(),label:'esse ano'};}
+  return null;
+}
+
+// Detecta intenção principal da pergunta
+function detectIntent(text){
+  const t=norm(text);
+  // Prioridade: se menciona nome de pessoa → deals_list (lista dos deals daquela pessoa)
+  // Palavras que pedem agrupamento
+  if(/por etapa|distribuicao por etapa|estagios?|etapas?/.test(t))return'deals_by_stage';
+  if(/por icp|distribuicao por icp|\bicp\b|por porte/.test(t))return'deals_by_icp';
+  if(/por proprietario|por vendedor|ranking|por pessoa|distribuicao por/.test(t))return'deals_by_owner';
+  if(/visao geral|overview|resumo geral|funil completo/.test(t))return'pipeline_overview';
+  if(/contatos?|leads?/.test(t)&&!/negocio|deal/.test(t))return'contacts';
+  // Padrão: lista de deals
+  return'deals_list';
+}
+
+// Monta filtros e busca negócios
+async function buildAndFetch(question){
   const owners=await getOwners();
+  const filters=[];
 
-  // ── Pipeline ──
-  let pipes=[];
-  for(const[kw,ids] of Object.entries(PIPE_KW)){
-    if(kw==='cs'){if(/\bcs\b/.test(q))pipes.push(...ids);}
-    else{if(q.includes(kw))pipes.push(...ids);}
-  }
-  // "vendas" isolado: só adiciona pipeline Vendas se não houver "pre vendas" na pergunta
-  if(/\bvendas\b/.test(q)&&!/(pre.?vendas|pre venda)/.test(q))pipes.push('11066130');
-  pipes=[...new Set(pipes)];
-  if(pipes.length)filters.push({propertyName:'pipeline',operator:'IN',values:pipes});
-
-  // ── Etapa ──
-  for(const[kw,stageId] of Object.entries(STAGE_KW)){
-    if(q.includes(kw)){filters.push({propertyName:'dealstage',operator:'EQ',value:stageId});break;}
-  }
-
-  // ── Status ──
-  if(/\babertos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Aberto'});
-  else if(/\bganhos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Ganho'});
-  else if(/\bperdidos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Perdido'});
-
-  // ── ICP ──
-  if(/\bpme\b/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'PME'});
-  else if(/\bge\b|grandes? empresas?/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'GE'});
-  else if(/\bgov\b|governo|publico/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'GOV'});
-
-  // ── Proprietário ──
-  // Normaliza nome do owner para comparar com q (também normalizado)
-  let ownerMatch=null;
-  for(const o of owners){
-    const firstN=norm(o.firstName||'');
-    const lastN=norm(o.lastName||'');
-    // Testa cada parte com word boundary — mínimo 4 chars para evitar falsos positivos
-    const parts=[firstN,lastN].filter(p=>p.length>=4);
-    const hit=parts.some(p=>{const pad=' '+q+' ';return pad.includes(' '+p+' ')||q===p||q.endsWith(' '+p)||q.startsWith(p+' ');});
-    if(hit){ownerMatch=o;break;}
-  }
+  // Owner
+  const ownerMatch=findOwnerInText(question,owners);
   if(ownerMatch)filters.push({propertyName:'hubspot_owner_id',operator:'EQ',value:String(ownerMatch.id)});
 
-  // ── Período ──
-  const period=detectPeriod(q);
+  // Pipeline
+  const pipes=findPipelineInText(question);
+  if(pipes.length)filters.push({propertyName:'pipeline',operator:'IN',values:pipes});
+
+  // Status
+  const status=findStatusInText(question);
+  if(status)filters.push({propertyName:'status_do_negocio',operator:'EQ',value:status});
+
+  // ICP
+  const icp=findICPInText(question);
+  if(icp)filters.push({propertyName:'icp',operator:'EQ',value:icp});
+
+  // Etapa
+  const stageId=findStageInText(question);
+  if(stageId)filters.push({propertyName:'dealstage',operator:'EQ',value:stageId});
+
+  // Período
+  const period=findPeriodInText(question);
   if(period){
-    const isClosedQuery=/ganhos?|perdidos?|fechados?/.test(q);
+    const isClosedQuery=findStatusInText(question)==='Ganho'||findStatusInText(question)==='Perdido';
     const dateField=isClosedQuery?'closedate':'createdate';
     if(period.after)filters.push({propertyName:dateField,operator:'GTE',value:String(period.after)});
     if(period.before)filters.push({propertyName:dateField,operator:'LTE',value:String(period.before)});
   }
 
-  return{filters,ownerMatch,pipes,period,q};
-}
-
-
-// Busca negócios com os filtros montados
-async function fetchDeals(filters,limit=200){
-  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','createdate','estagio_de_ciclo_de_vida___negocio'];
-  const body={filterGroups:filters.length?[{filters}]:[{}],properties:props,limit:Math.min(limit,200),sorts:[{propertyName:'createdate',direction:'DESCENDING'}]};
+  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','createdate'];
+  const body={
+    filterGroups:filters.length?[{filters}]:[{}],
+    properties:props,
+    limit:200,
+    sorts:[{propertyName:'createdate',direction:'DESCENDING'}]
+  };
   const d=await hs('POST','/crm/v3/objects/deals/search',body);
-  return{results:d.results||[],total:d.total||0};
+  return{
+    results:d.results||[],
+    total:d.total||0,
+    ownerMatch,pipes,status,icp,period,filters
+  };
 }
 
-// Busca contatos
-async function fetchContacts(q,limit=50){
-  const filters=[];
-  const period=detectPeriod(q);
-  if(period){
-    if(period.after)filters.push({propertyName:'createdate',operator:'GTE',value:String(period.after)});
-    if(period.before)filters.push({propertyName:'createdate',operator:'LTE',value:String(period.before)});
-  }
-  const body={filterGroups:filters.length?[{filters}]:[{}],properties:['firstname','lastname','email','company','createdate','estagio_de_ciclo_de_vida___contato','hs_lead_status'],limit,sorts:[{propertyName:'createdate',direction:'DESCENDING'}]};
-  const d=await hs('POST','/crm/v3/objects/contacts/search',body);
-  return{results:d.results||[],total:d.total||0};
-}
-
-// Detecta intenção da pergunta
-function detectIntent(q){
-  // q já vem normalizado (sem acentos, minúsculo)
-  if(/contatos?|leads?/.test(q))return'contacts';
-  if(/empresas?|accounts?|company/.test(q))return'companies';
-  if(/etapas?|estagios?|stages?|por etapa|distribuicao/.test(q))return'deals_by_stage';
-  if(/\bicp\b|porte|\bpme\b|\bge\b|\bgov\b/.test(q))return'deals_by_icp';
-  if(/proprietarios?|vendedores?|sdrs?|bdrs?|dono|responsavel|ranking|por pessoa/.test(q))return'deals_by_owner';
-  if(/pipelines?|funil|visao geral|resumo|overview/.test(q))return'pipeline_overview';
-  return'deals_list';
-}
-
-// Formata valor em R$
+// Formata R$
 const fmtBRL=v=>v?`R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}`:'—';
-const fmtDate=v=>v?new Date(parseInt(v)||v).toLocaleDateString('pt-BR'):'—';
 const hsLink=(id,type,label)=>`<a href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank" style="color:#7c3aed;font-weight:600;font-size:11px">${label}</a>`;
 
-// Renderiza resposta visual baseada nos dados buscados
-function buildReply(q,intent,deals,total,owners,ownerMatch,pipes,period){
-  const pipeNames=pipes.length?pipes.map(p=>PIPES[p]?.label||p).join(', '):'todos os pipelines';
-  const statusTag=(s)=>{
-    const c=s==='Aberto'?'#e17055':s==='Ganho'?'#27ae60':'#888';
-    return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${s}</span>`;
-  };
-  const icpTag=(icp)=>{
-    if(!icp)return'';
-    const c=icp==='PME'?'#3b82f6':icp==='GE'?'#8b5cf6':'#f59e0b';
-    return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${icp}</span>`;
-  };
+const statusTag=(s)=>{
+  if(!s)return'';
+  const c=s==='Aberto'?'#e17055':s==='Ganho'?'#27ae60':'#888';
+  return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${s}</span>`;
+};
 
-  // Cabeçalho contextual
-  let ctx='';
-  if(ownerMatch)ctx+=`👤 <strong>${ownerMatch.firstName} ${ownerMatch.lastName}</strong> · `;
-  ctx+=`📊 <strong>${pipeNames}</strong>`;
-  if(period)ctx+=` · 📅 período filtrado`;
+// Monta contexto descritivo do que foi buscado
+function buildContextLine(ownerMatch,pipes,status,icp,period){
+  const parts=[];
+  if(ownerMatch)parts.push(`👤 <strong>${ownerMatch.firstName} ${ownerMatch.lastName}</strong>`);
+  if(pipes.length)parts.push(`📊 <strong>${pipes.map(p=>PIPES[p]?.label||p).join(', ')}</strong>`);
+  else parts.push('📊 <strong>Todos os pipelines</strong>');
+  if(status)parts.push(statusTag(status));
+  if(icp)parts.push(`<span class="tag" style="background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644">${icp}</span>`);
+  if(period)parts.push(`📅 ${period.label}`);
+  return parts.join(' · ');
+}
 
-  // ── INTENT: visão geral de pipeline ──
-  if(intent==='pipeline_overview'){
-    const byPipe={};
-    deals.forEach(d=>{const p=d.properties.pipeline;if(!byPipe[p])byPipe[p]={label:PIPES[p]?.label||p,aberto:0,ganho:0,perdido:0,total:0};byPipe[p][d.properties.status_do_negocio?.toLowerCase()||'total']++;byPipe[p].total++;});
-    const rows=Object.values(byPipe).map(p=>`<tr><td><strong>${p.label}</strong></td><td style="text-align:center"><span style="color:#e17055;font-weight:700">${p.aberto}</span></td><td style="text-align:center"><span style="color:#27ae60;font-weight:700">${p.ganho}</span></td><td style="text-align:center"><span style="color:#888;font-weight:700">${p.perdido}</span></td><td style="text-align:center;font-weight:700">${p.total}</td></tr>`).join('');
-    const html=`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
-      <div class="cstats">
-        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
-        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
-        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Perdido').length}</div><div class="cstat-l">PERDIDOS</div></div>
-        <div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div>
-      </div>
-      <table class="ctable"><thead><tr><th>Pipeline</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
-    return html;
-  }
+// Renderiza resposta
+async function buildReply(question,intent,data){
+  const{results,total,ownerMatch,pipes,status,icp,period}=data;
+  const owners=await getOwners();
+  const ctx=buildContextLine(ownerMatch,pipes,status,icp,period);
 
-  // ── INTENT: por etapa ──
+  // ── Por etapa ──
   if(intent==='deals_by_stage'){
     const byStage={};
-    deals.forEach(d=>{
+    results.forEach(d=>{
       const pipe=d.properties.pipeline,stageId=d.properties.dealstage;
-      const pipeObj=PIPES[pipe];
-      const stageName=pipeObj?.stages.find(s=>s.v===stageId)?.l||stageId||'—';
-      const key=`${pipe}::${stageId}`;
+      const pipeObj=PIPES[pipe];const stageName=pipeObj?.stages.find(s=>s.v===stageId)?.l||stageId||'—';
+      const key=pipe+'::'+stageId;
       if(!byStage[key])byStage[key]={pipeline:PIPES[pipe]?.label||pipe,stage:stageName,count:0,valor:0};
-      byStage[key].count++;
-      byStage[key].valor+=parseFloat(d.properties.amount||0);
+      byStage[key].count++;byStage[key].valor+=parseFloat(d.properties.amount||0);
     });
-    const sorted=Object.values(byStage).sort((a,b)=>b.count-a.count);
-    const rows=sorted.map(s=>`<tr><td>${s.pipeline}</td><td><strong>${s.stage}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${s.count}</td><td>${s.valor>0?fmtBRL(s.valor):'—'}</td></tr>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+    const rows=Object.values(byStage).sort((a,b)=>b.count-a.count)
+      .map(s=>`<tr><td>${s.pipeline}</td><td><strong>${s.stage}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${s.count}</td><td>${s.valor>0?fmtBRL(s.valor):'—'}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+      <div class="cstats"><div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div></div>
       <table class="ctable"><thead><tr><th>Pipeline</th><th>Etapa</th><th>Qtd</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  // ── INTENT: por ICP ──
+  // ── Por ICP ──
   if(intent==='deals_by_icp'){
-    const byIcp={PME:{count:0,ganho:0,valor:0},GE:{count:0,ganho:0,valor:0},GOV:{count:0,ganho:0,valor:0},'—':{count:0,ganho:0,valor:0}};
-    deals.forEach(d=>{const icp=d.properties.icp||'—';if(!byIcp[icp])byIcp[icp]={count:0,ganho:0,valor:0};byIcp[icp].count++;if(d.properties.status_do_negocio==='Ganho')byIcp[icp].ganho++;byIcp[icp].valor+=parseFloat(d.properties.amount||0);});
-    const rows=Object.entries(byIcp).filter(([,v])=>v.count>0).map(([icp,v])=>`<tr><td>${icpTag(icp)||icp}</td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
-    const statsHtml=Object.entries(byIcp).filter(([,v])=>v.count>0).map(([icp,v])=>`<div class="cstat"><div class="cstat-n">${v.count}</div><div class="cstat-l">${icp}</div></div>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+    const byIcp={};
+    results.forEach(d=>{
+      const i=d.properties.icp||'Sem ICP';
+      if(!byIcp[i])byIcp[i]={count:0,ganho:0,valor:0};
+      byIcp[i].count++;
+      if(d.properties.status_do_negocio==='Ganho'){byIcp[i].ganho++;byIcp[i].valor+=parseFloat(d.properties.amount||0);}
+    });
+    const rows=Object.entries(byIcp).sort((a,b)=>b[1].count-a[1].count)
+      .map(([i,v])=>`<tr><td><strong>${i}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
+    const statsHtml=Object.entries(byIcp).sort((a,b)=>b[1].count-a[1].count)
+      .map(([i,v])=>`<div class="cstat"><div class="cstat-n">${v.count}</div><div class="cstat-l">${i}</div></div>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
       <div class="cstats">${statsHtml}</div>
-      <table class="ctable"><thead><tr><th>ICP</th><th>Total</th><th>Ganhos</th><th>Valor Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+      <table class="ctable"><thead><tr><th>ICP</th><th>Total</th><th>Ganhos</th><th>Valor Ganho</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  // ── INTENT: por proprietário ──
+  // ── Por proprietário ──
   if(intent==='deals_by_owner'){
     const byOwner={};
-    deals.forEach(d=>{
+    results.forEach(d=>{
       const oid=d.properties.hubspot_owner_id;
-      const owner=owners.find(o=>String(o.id)===String(oid));
-      const name=owner?`${owner.firstName||''} ${owner.lastName||''}`.trim():`ID ${oid||'—'}`;
+      const o=owners.find(x=>String(x.id)===String(oid));
+      const name=o?`${o.firstName||''} ${o.lastName||''}`.trim():`ID ${oid||'—'}`;
       if(!byOwner[name])byOwner[name]={count:0,aberto:0,ganho:0,perdido:0,valor:0};
       byOwner[name].count++;
       const s=(d.properties.status_do_negocio||'').toLowerCase();
@@ -924,46 +953,100 @@ function buildReply(q,intent,deals,total,owners,ownerMatch,pipes,period){
       else if(s==='ganho'){byOwner[name].ganho++;byOwner[name].valor+=parseFloat(d.properties.amount||0);}
       else if(s==='perdido')byOwner[name].perdido++;
     });
-    const sorted=Object.entries(byOwner).sort((a,b)=>b[1].count-a[1].count);
-    const rows=sorted.map(([name,v])=>`<tr><td><strong>${name}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${v.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${v.perdido}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+    const rows=Object.entries(byOwner).sort((a,b)=>b[1].count-a[1].count)
+      .map(([name,v])=>`<tr><td><strong>${name}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${v.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${v.perdido}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
       <table class="ctable"><thead><tr><th>Proprietário</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Valor Ganho</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  // ── INTENT: lista de negócios ──
-  if(intent==='deals_list'){
-    if(!deals.length)return`<div style="font-size:13px;color:#555;margin-bottom:8px">${ctx}</div><div style="text-align:center;padding:16px;color:#888;font-size:13px">Nenhum negócio encontrado com esses filtros 🔍</div>`;
-    const stats=`<div class="cstats">
-      <div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div>
-      <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
-      <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
-    </div>`;
-    const mostrando=deals.slice(0,15);
-    const lista=mostrando.map(d=>{
-      const p=d.properties;
-      const owner=owners.find(o=>String(o.id)===String(p.hubspot_owner_id));
-      const ownerName=owner?`${owner.firstName||''} ${owner.lastName||''}`.trim():'—';
-      return`<div class="clist-item">
-        <div>
-          <div style="font-weight:700;font-size:13px;color:#1e1b4b;margin-bottom:3px">${p.dealname||'—'}</div>
-          <div style="font-size:11px;color:#888">${PIPES[p.pipeline]?.label||'—'} · ${ownerName} ${p.icp?'· '+p.icp:''}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          ${statusTag(p.status_do_negocio||'—')}
-          ${hsLink(d.id,'0-3','🔗 Ver')}
-        </div>
-      </div>`;
-    }).join('');
-    const mais=total>15?`<div style="text-align:center;font-size:12px;color:#888;margin-top:8px">Mostrando 15 de ${total} negócios</div>`:'';
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>${stats}${lista}${mais}`;
+  // ── Visão geral pipeline ──
+  if(intent==='pipeline_overview'){
+    const byPipe={};
+    results.forEach(d=>{
+      const p=d.properties.pipeline;
+      if(!byPipe[p])byPipe[p]={label:PIPES[p]?.label||p,aberto:0,ganho:0,perdido:0,total:0};
+      const s=(d.properties.status_do_negocio||'').toLowerCase();
+      if(s==='aberto')byPipe[p].aberto++;else if(s==='ganho')byPipe[p].ganho++;else byPipe[p].perdido++;
+      byPipe[p].total++;
+    });
+    const rows=Object.values(byPipe).map(p=>`<tr><td><strong>${p.label}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${p.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${p.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${p.perdido}</td><td style="text-align:center;font-weight:700">${p.total}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+      <div class="cstats">
+        <div class="cstat"><div class="cstat-n">${results.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
+        <div class="cstat"><div class="cstat-n">${results.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
+        <div class="cstat"><div class="cstat-n">${results.filter(d=>d.properties.status_do_negocio==='Perdido').length}</div><div class="cstat-l">PERDIDOS</div></div>
+        <div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div>
+      </div>
+      <table class="ctable"><thead><tr><th>Pipeline</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  // ── INTENT: contatos ──
-  return`<div style="font-size:13px;color:#555">Busca processada. ${total} registro(s) encontrado(s).</div>`;
+  // ── Lista de deals (padrão) ──
+  if(!results.length){
+    return`<div style="font-size:13px;color:#555;margin-bottom:8px">${ctx}</div>
+      <div style="text-align:center;padding:20px;color:#888;font-size:13px">Nenhum negócio encontrado com esses filtros 🔍<br><span style="font-size:11px">Tente reformular ou verificar os filtros</span></div>`;
+  }
+
+  const statsHtml=`<div class="cstats">
+    <div class="cstat"><div class="cstat-n" style="color:#7c3aed">${total}</div><div class="cstat-l">TOTAL${total>200?' (limite 200)':''}</div></div>
+    <div class="cstat"><div class="cstat-n" style="color:#e17055">${results.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
+    <div class="cstat"><div class="cstat-n" style="color:#27ae60">${results.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
+  </div>`;
+
+  const lista=results.slice(0,15).map(d=>{
+    const p=d.properties;
+    const o=owners.find(x=>String(x.id)===String(p.hubspot_owner_id));
+    const ownerName=o?`${o.firstName||''} ${o.lastName||''}`.trim():'—';
+    return`<div class="clist-item">
+      <div>
+        <div style="font-weight:700;font-size:13px;color:#1e1b4b;margin-bottom:2px">${p.dealname||'—'}</div>
+        <div style="font-size:11px;color:#888">${PIPES[p.pipeline]?.label||'—'} · ${ownerName}${p.icp?' · '+p.icp:''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        ${statusTag(p.status_do_negocio||'—')}
+        ${hsLink(d.id,'0-3','🔗 Ver')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const mais=total>15?`<div style="text-align:center;font-size:11px;color:#888;margin-top:6px">Mostrando 15 de ${total} negócios</div>`:'';
+  return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>${statsHtml}${lista}${mais}`;
 }
 
-// Controla o estado de carregamento do chat
+// Busca contatos
+async function fetchContacts(question){
+  const filters=[];
+  const period=findPeriodInText(question);
+  if(period){
+    if(period.after)filters.push({propertyName:'createdate',operator:'GTE',value:String(period.after)});
+    if(period.before)filters.push({propertyName:'createdate',operator:'LTE',value:String(period.before)});
+  }
+  const body={filterGroups:filters.length?[{filters}]:[{}],properties:['firstname','lastname','email','company','createdate','estagio_de_ciclo_de_vida___contato'],limit:50,sorts:[{propertyName:'createdate',direction:'DESCENDING'}]};
+  const d=await hs('POST','/crm/v3/objects/contacts/search',body);
+  return{results:d.results||[],total:d.total||0};
+}
+
+// Processa a pergunta e retorna HTML da resposta
 let chatBusy=false;
+async function processChat(question){
+  const intent=detectIntent(question);
+
+  if(intent==='contacts'){
+    const{results,total}=await fetchContacts(question);
+    if(!results.length)return'Nenhum contato encontrado 🔍';
+    const lista=results.slice(0,12).map(c=>{
+      const p=c.properties;
+      const name=`${p.firstname||''} ${p.lastname||''}`.trim()||'Sem nome';
+      return`<div class="clist-item"><div><div style="font-weight:700;font-size:13px;color:#1e1b4b">${name}</div><div style="font-size:11px;color:#888">${p.email||'—'} · ${p.company||'—'}</div></div>${hsLink(c.id,'0-1','🔗 Ver')}</div>`;
+    }).join('');
+    return`<strong>${total} contato(s)</strong> <span style="font-size:11px;color:#888">• mostrando ${Math.min(12,results.length)}</span><br><br>${lista}`;
+  }
+
+  const data=await buildAndFetch(question);
+  return buildReply(question,intent,data);
+}
+
+
+
 
 function nowHM(){return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 
@@ -991,37 +1074,6 @@ function addTyping(){
 }
 function removeTyping(){const t=document.getElementById('chat-typing');if(t)t.remove();}
 
-async function processChat(question){
-  // Normaliza para usar em detectIntent e comparações
-  const q=norm(question);
-  const owners=await getOwners();
-
-  // Detecta intenção (usa q normalizado)
-  const intent=detectIntent(q);
-
-  // Contatos
-  if(intent==='contacts'){
-    const{results,total}=await fetchContacts(q);
-    if(!results.length)return'Nenhum contato encontrado com esse filtro 🔍';
-    const lista=results.slice(0,12).map(c=>{
-      const p=c.properties;
-      const name=`${p.firstname||''} ${p.lastname||''}`.trim()||'Sem nome';
-      return`<div class="clist-item"><div><div style="font-weight:700;font-size:13px;color:#1e1b4b">${name}</div><div style="font-size:11px;color:#888">${p.email||'—'} · ${p.company||'—'}</div></div>${hsLink(c.id,'0-1','🔗 Ver')}</div>`;
-    }).join('');
-    return`<strong>${total} contato(s) encontrado(s)</strong><br><div style="font-size:11px;color:#888;margin-bottom:8px">Mostrando ${Math.min(12,results.length)}</div>${lista}`;
-  }
-
-  // Negócios (maioria dos intents)
-  const{filters,ownerMatch,pipes,period}=await buildDealFilters(question);
-  const{results,total}=await fetchDeals(filters,200);
-
-  if(!results.length&&!['pipeline_overview','deals_by_stage','deals_by_icp','deals_by_owner'].includes(intent)){
-    return`Nenhum negócio encontrado com esses filtros. Tente reformular a pergunta — por exemplo, especificando o pipeline, status ou período 🔍`;
-  }
-
-  return buildReply(q,intent,results,total,owners,ownerMatch,pipes,period); // q already normalized
-}
-
 async function sendChat(){
   const inp=document.getElementById('chat-inp');
   const q=inp.value.trim();
@@ -1030,19 +1082,16 @@ async function sendChat(){
   chatBusy=true;
   document.getElementById('chat-send').disabled=true;
   document.getElementById('chat-sugs').style.display='none';
-
   addCMsg('user',q.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
   addTyping();
-
   try{
     const reply=await processChat(q);
     removeTyping();
     addCMsg('bot',reply);
   }catch(e){
     removeTyping();
-    addCMsg('bot',`<span style="color:#e74c3c">⚠️ Erro ao buscar dados: ${e.message}</span>`);
+    addCMsg('bot',`<span style="color:#e74c3c">⚠️ Erro: ${e.message}</span>`);
   }
-
   chatBusy=false;
   document.getElementById('chat-send').disabled=false;
   inp.focus();
