@@ -804,10 +804,11 @@ async function runBulkValidate(){
 }
 
 /* ══════════════════════════════════════════════════════
-   CHAT COM O HUB — 100% HubSpot API, sem Claude API
+   CHAT COM O HUB — Engine com Regras de Negócio Completas
+   v139 — baseado na documentação oficial Alura B2B
 ══════════════════════════════════════════════════════ */
 
-// Cache de owners
+// ── Cache de owners ──
 let _ownersCache=null;
 async function getOwners(){
   if(_ownersCache)return _ownersCache;
@@ -815,65 +816,77 @@ async function getOwners(){
   return _ownersCache;
 }
 
-// Normaliza: minúsculo + sem acentos + espaço simples
+// ── Normalização ──
 function norm(s){
   return String(s||'').toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9\s]/g,' ')
     .replace(/\s+/g,' ').trim();
 }
-
-// Testa se uma palavra aparece como token isolado no texto normalizado
 function hasToken(text,token){
   if(!token||token.length<2)return false;
-  const t=norm(text), k=norm(token);
-  // Adiciona espaço em volta para garantir que é palavra inteira
-  return(' '+t+' ').includes(' '+k+' ');
+  return(' '+norm(text)+' ').includes(' '+norm(token)+' ');
 }
 
-// Detecta qual owner foi mencionado na pergunta
+// ══════════════════════════════════════════════════════
+// DICIONÁRIO SEMÂNTICO — baseado na documentação oficial
+// ══════════════════════════════════════════════════════
+
+/*
+  REGRAS DE PIPELINE POR INTENÇÃO:
+  - "vendas" / "venda" / "quanto vendemos" → pipeline Vendas (11066130), status=Ganho
+  - "sql" / "oportunidade" / "ganho no inbound/bdr" → pipeline Pré-Vendas (11075625) ou BDR (15079182), status=Ganho
+  - "cs" / "acm" → pipeline CS/ACM (11066999)
+  - "ganho" sem pipeline explícito → AMBÍGUO: pergunta se quer Vendas ou CS/ACM
+  - "inbound" / "pre-vendas" → pipeline Pré-Vendas (11075625)
+  - "bdr" / "outbound" → pipeline BDR (15079182)
+
+  REGRAS DE DATA:
+  - Resultado/fechamento/SQL/venda/perda → closedate
+  - Entrada/criação/volume → createdate
+
+  PROPRIEDADES IMPORTANTES:
+  - icp___perfil_da_empresa: PME | GE | GOV
+  - tamanho_da_empresa: faixas de funcionários
+  - canal__oficial_para_dados_: inbound | outbound interno | outbound externo | parcerias
+  - amount: valor do negócio (só somar em Vendas + ganho + closedate)
+*/
+
+// Detecta owner mencionado
 function findOwnerInText(text,owners){
   const t=norm(text);
-  // Tenta match pelo nome completo primeiro (mais preciso)
+  // Prioridade 1: nome completo exato (ex: "caue dias", "beatriz gouveia")
   for(const o of owners){
     const full=norm((o.firstName||'')+' '+(o.lastName||''));
     if(full.length>3&&(' '+t+' ').includes(' '+full+' '))return o;
   }
-  // Tenta por sobrenome (mín 4 chars)
+  // Prioridade 2: sobrenome com 5+ chars — só aceita se sobrenome aparecer isolado no texto
+  // E o primeiro nome também aparecer (reduz falsos positivos)
   for(const o of owners){
     const last=norm(o.lastName||'');
-    if(last.length>=4&&hasToken(t,last))return o;
+    const first=norm(o.firstName||'');
+    if(last.length>=5&&hasToken(t,last)){
+      // Valida: primeiro nome também precisa estar presente ou sobrenome é único o suficiente (8+ chars)
+      if(last.length>=8||hasToken(t,first))return o;
+    }
   }
-  // Tenta por primeiro nome (mín 4 chars)
+  // Prioridade 3: só pelo primeiro nome — exige 5+ chars E que seja nome raro (não genérico)
+  const genericNames=['joao','jose','ana','maria','paulo','lucas','pedro','carlos','marcos'];
   for(const o of owners){
     const first=norm(o.firstName||'');
-    if(first.length>=4&&hasToken(t,first))return o;
+    if(first.length>=5&&!genericNames.includes(first)&&hasToken(t,first))return o;
   }
   return null;
 }
 
-// Detecta pipeline mencionado
-function findPipelineInText(text){
+// Detecta canal__oficial_para_dados_
+function findCanalInText(text){
   const t=norm(text);
-  const pipes=[];
-  if(t.includes('pre vendas')||t.includes('pre-vendas')||t.includes('inbound')||t.includes('pre venda'))pipes.push('11075625');
-  if(/\bvendas\b/.test(t)&&!t.includes('pre vendas')&&!t.includes('pre-vendas'))pipes.push('11066130');
-  if(t.includes('bdr')||t.includes('outbound'))pipes.push('15079182');
-  if(/\bcs\b/.test(t)||t.includes(' acm'))pipes.push('11066999');
-  if(t.includes('hunter'))pipes.push('663181378');
-  if(t.includes('scooto'))pipes.push('15000484');
-  if(t.includes('parceria'))pipes.push('11847207');
-  if(t.includes('self trial'))pipes.push('37990225');
-  return[...new Set(pipes)];
-}
-
-// Detecta status mencionado
-// "ganho" e "venda" são sinônimos
-function findStatusInText(text){
-  const t=norm(text);
-  if(/\babertos?\b/.test(t))return'Aberto';
-  if(/\bganhos?\b|\bvendas?\b|\bvendido\b|\bfechados?\b/.test(t))return'Ganho';
-  if(/\bperdidos?\b/.test(t))return'Perdido';
+  if(t.includes('outbound interno'))return'outbound interno';
+  if(t.includes('outbound externo'))return'outbound externo';
+  if(t.includes('parceria'))return'parcerias';
+  // "inbound" como canal — só retorna canal se NÃO for pipeline context
+  // (inbound como pipeline é tratado separado)
   return null;
 }
 
@@ -881,34 +894,30 @@ function findStatusInText(text){
 function findICPInText(text){
   const t=norm(text);
   if(/\bpme\b/.test(t))return'PME';
-  if(/\bge\b|grande empresa|grandes empresas/.test(t))return'GE';
+  if(/\bge\b|grandes? empresas?/.test(t))return'GE';
   if(/\bgov\b|governo|publico|setor publico/.test(t))return'GOV';
   return null;
 }
 
-// Detecta etapa
+// Detecta etapa específica
 function findStageInText(text){
   const t=norm(text);
   const map=[
     ['novo contato','32547660'],['mql','32547660'],
     ['validacao','32547661'],
-    ['conexao','965485473'],
-    ['conectado','963329357'],
+    ['conexao','965485473'],['conectado','963329357'],
     ['qualificacao','32547662'],['sal','32547662'],
-    ['reuniao agendada','32547663'],['sql','32547663'],
+    ['reuniao agendada','32547663'],
     ['map necessidade','32538778'],['mapeamento','32538778'],
-    ['solucao','32538779'],
-    ['negociacao','32538780'],
-    ['contratacao','32538781'],
+    ['solucao','32538779'],['negociacao','32538780'],['contratacao','32538781'],
   ];
   for(const[kw,id] of map){if(t.includes(kw))return id;}
   return null;
 }
 
-// Detecta período temporal
+// Detecta período temporal — inclui meses nomeados (janeiro, fevereiro, etc.)
 function findPeriodInText(text){
-  const t=norm(text);
-  const now=new Date();
+  const t=norm(text);const now=new Date();
   if(/\bhoje\b/.test(t)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime(),label:'hoje'};}
   if(/essa semana|esta semana/.test(t)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime(),label:'essa semana'};}
   if(/ultimos?\s*7\s*dias?/.test(t))return{after:now.getTime()-7*86400000,label:'últimos 7 dias'};
@@ -918,113 +927,238 @@ function findPeriodInText(text){
   if(/mes passado/.test(t)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'mês passado'};}
   if(/ano passado/.test(t)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime(),label:'ano passado'};}
   if(/esse ano|este ano|ano atual/.test(t)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime(),label:'esse ano'};}
+  // Meses nomeados — detecta "em janeiro", "de fevereiro", "no mes de março", etc.
+  const meses={janeiro:0,fevereiro:1,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
+  for(const[nome,idx] of Object.entries(meses)){
+    if(t.includes(nome)){
+      // Detecta ano junto se mencionado (ex: "fevereiro de 2025")
+      const anoMatch=t.match(new RegExp(nome+'\\s+de\\s+(20\\d{2})'));
+      const ano=anoMatch?parseInt(anoMatch[1]):now.getFullYear();
+      // Se o mês já passou esse ano, assume esse ano; se não, assume ano passado
+      const refAno=(idx>now.getMonth()&&ano===now.getFullYear())?ano-1:ano;
+      const s=new Date(refAno,idx,1);
+      const e=new Date(refAno,idx+1,0,23,59,59);
+      return{after:s.getTime(),before:e.getTime(),label:`${nome} de ${refAno}`};
+    }
+  }
   return null;
 }
 
-// Detecta intenção principal da pergunta
-function detectIntent(text){
+// ── INTERPRETAÇÃO SEMÂNTICA PRINCIPAL ──
+// Retorna o contexto completo da pergunta conforme regras de negócio
+function interpretQuestion(text){
   const t=norm(text);
-  // Prioridade: se menciona nome de pessoa → deals_list (lista dos deals daquela pessoa)
-  // Palavras que pedem agrupamento
-  if(/por etapa|distribuicao por etapa|estagios?|etapas?/.test(t))return'deals_by_stage';
-  if(/por icp|distribuicao por icp|\bicp\b|por porte/.test(t))return'deals_by_icp';
-  if(/por proprietario|por vendedor|ranking|por pessoa|distribuicao por/.test(t))return'deals_by_owner';
-  if(/visao geral|overview|resumo geral|funil completo/.test(t))return'pipeline_overview';
-  if(/contatos?|leads?/.test(t)&&!/negocio|deal/.test(t))return'contacts';
-  // Padrão: lista de deals
-  return'deals_list';
+  const result={
+    pipes:[],        // IDs dos pipelines
+    status:null,     // Aberto | Ganho | Perdido
+    dateField:null,  // createdate | closedate
+    icp:null,        // PME | GE | GOV
+    canal:null,      // canal__oficial_para_dados_
+    stageId:null,    // ID da etapa
+    calcAmount:false,// true = somar amount (receita)
+    calcAvg:false,   // true = ticket médio
+    ambiguous:null,  // 'ganho_pipeline' = precisa perguntar pipeline
+    intent:null,     // tipo de visualização
+  };
+
+  // ── DETECÇÃO DE INTENÇÃO SEMÂNTICA ──
+
+  // 1. "Quanto vendemos" / "total de vendas" / "receita" → SEMPRE Vendas + ganho + closedate + SUM
+  const isRevenue=/quanto vendemos|total de vendas|receita|valor total vendido|ticket medio|ticket medio/.test(t);
+  if(isRevenue){
+    result.pipes=['11066130'];
+    result.status='Ganho';
+    result.dateField='closedate';
+    result.calcAmount=true;
+    if(t.includes('ticket medio')||t.includes('ticket médio'))result.calcAvg=true;
+  }
+
+  // 2. "SQL" / "oportunidade" / "ganho no inbound ou bdr" → Pré-Vendas + BDR + ganho + closedate
+  const isSQL=/\bsql[s]?\b|oportunidade[s]?|ganho[s]? no (inbound|bdr|outbound)|sql[s]? gerado[s]?/.test(t);
+  if(isSQL&&!isRevenue){
+    result.pipes=['11075625','15079182'];
+    result.status='Ganho';
+    result.dateField='closedate';
+  }
+
+  // 3. Pipelines explícitos na pergunta
+  if(t.includes('pre vendas')||t.includes('pre-vendas')||t.includes('pre venda')){
+    if(!result.pipes.includes('11075625'))result.pipes.push('11075625');
+  }
+  if(t.includes('bdr')||(t.includes('outbound')&&!t.includes('outbound interno')&&!t.includes('outbound externo'))){
+    if(!result.pipes.includes('15079182'))result.pipes.push('15079182');
+  }
+  if(/\bcs\b/.test(t)||t.includes(' acm')||t.includes('cs acm')){
+    if(!result.pipes.includes('11066999'))result.pipes.push('11066999');
+  }
+  // "vendas" isolado → pipeline Vendas (não SQL, não pré-vendas)
+  if(/\bvendas?\b/.test(t)&&!t.includes('pre vendas')&&!isSQL&&!result.pipes.includes('11066130')){
+    result.pipes.push('11066130');
+  }
+  if(t.includes('hunter'))result.pipes.push('663181378');
+  if(t.includes('scooto'))result.pipes.push('15000484');
+  if(t.includes('parceria')&&!t.includes('canal'))result.pipes.push('11847207');
+  if(t.includes('self trial'))result.pipes.push('37990225');
+  result.pipes=[...new Set(result.pipes)];
+
+  // 4. Status explícito (se não foi definido acima)
+  if(!result.status){
+    if(/\babertos?\b/.test(t))result.status='Aberto';
+    else if(/\bganhos?\b|\bfechados?\b/.test(t))result.status='Ganho';
+    else if(/\bperdidos?\b/.test(t))result.status='Perdido';
+    // "vendas" sem pipeline explícito = status ganho + pipeline Vendas
+    else if(/\bvenda[s]?\b/.test(t)&&result.pipes.includes('11066130'))result.status='Ganho';
+  }
+
+  // 5. Data field (se não foi definido acima)
+  if(!result.dateField){
+    const isClosedQuery=result.status==='Ganho'||result.status==='Perdido'||isSQL;
+    result.dateField=isClosedQuery?'closedate':'createdate';
+  }
+
+  // 6. Canal
+  result.canal=findCanalInText(t);
+
+  // 7. ICP
+  result.icp=findICPInText(t);
+
+  // 8. Etapa
+  result.stageId=findStageInText(t);
+
+  // 9. AMBIGUIDADE: "ganho" sem pipeline claro + sem palavras que denotem SQL ou receita
+  // → "total de vendas" pode ser Vendas OU CS/ACM
+  const mentionsGanho=/\bganhos?\b/.test(t)&&!isSQL&&!isRevenue;
+  const mentionsVendas=/\bvenda[s]?\b/.test(t)&&!isSQL&&!isRevenue;
+  const hasExplicitPipeline=result.pipes.length>0;
+  if((mentionsGanho||mentionsVendas)&&!hasExplicitPipeline){
+    result.ambiguous='ganho_pipeline';
+  }
+
+  // 10. Intenção de visualização
+  if(/por etapa|distribuicao por etapa|estagios?|etapas?/.test(t))result.intent='deals_by_stage';
+  else if(/por icp|distribuicao por icp|\bicp\b|por porte/.test(t))result.intent='deals_by_icp';
+  else if(/por proprietario|por vendedor|ranking|por pessoa|quem (vendeu|fez|gerou)/.test(t))result.intent='deals_by_owner';
+  else if(/visao geral|overview|resumo geral|funil completo/.test(t))result.intent='pipeline_overview';
+  else if(/contatos?|leads?/.test(t)&&!/negocio|deal/.test(t))result.intent='contacts';
+  else result.intent='deals_list';
+
+  return result;
 }
 
-// Monta filtros e busca negócios
-async function buildAndFetch(question){
+// ── MONTA FILTROS E BUSCA ──
+async function buildAndFetch(question,overridePipes){
   const owners=await getOwners();
+  const ctx=interpretQuestion(question);
   const filters=[];
+  const pipes=overridePipes||ctx.pipes;
 
   // Owner
   const ownerMatch=findOwnerInText(question,owners);
   if(ownerMatch)filters.push({propertyName:'hubspot_owner_id',operator:'EQ',value:String(ownerMatch.id)});
 
   // Pipeline
-  const pipes=findPipelineInText(question);
   if(pipes.length)filters.push({propertyName:'pipeline',operator:'IN',values:pipes});
 
   // Status
-  const status=findStatusInText(question);
-  if(status)filters.push({propertyName:'status_do_negocio',operator:'EQ',value:status});
+  if(ctx.status)filters.push({propertyName:'status_do_negocio',operator:'EQ',value:ctx.status});
 
   // ICP
-  const icp=findICPInText(question);
-  if(icp)filters.push({propertyName:'icp',operator:'EQ',value:icp});
+  if(ctx.icp)filters.push({propertyName:'icp',operator:'EQ',value:ctx.icp});
+
+  // Canal
+  if(ctx.canal)filters.push({propertyName:'canal__oficial_para_dados_',operator:'EQ',value:ctx.canal});
 
   // Etapa
-  const stageId=findStageInText(question);
-  if(stageId)filters.push({propertyName:'dealstage',operator:'EQ',value:stageId});
+  if(ctx.stageId)filters.push({propertyName:'dealstage',operator:'EQ',value:ctx.stageId});
 
-  // Período
+  // Período — usa a data correta conforme regra
   const period=findPeriodInText(question);
   if(period){
-    const isClosedQuery=findStatusInText(question)==='Ganho'||findStatusInText(question)==='Perdido';
-    const dateField=isClosedQuery?'closedate':'createdate';
-    if(period.after)filters.push({propertyName:dateField,operator:'GTE',value:String(period.after)});
-    if(period.before)filters.push({propertyName:dateField,operator:'LTE',value:String(period.before)});
+    if(period.after)filters.push({propertyName:ctx.dateField,operator:'GTE',value:String(period.after)});
+    if(period.before)filters.push({propertyName:ctx.dateField,operator:'LTE',value:String(period.before)});
   }
 
-  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','createdate'];
+  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','canal__oficial_para_dados_','tamanho_da_empresa','createdate'];
   const body={
     filterGroups:filters.length?[{filters}]:[{}],
-    properties:props,
-    limit:200,
-    sorts:[{propertyName:'createdate',direction:'DESCENDING'}]
+    properties:props,limit:200,
+    sorts:[{propertyName:ctx.dateField||'createdate',direction:'DESCENDING'}]
   };
   const d=await hs('POST','/crm/v3/objects/deals/search',body);
   return{
-    results:d.results||[],
-    total:d.total||0,
-    ownerMatch,pipes,status,icp,period,filters
+    results:d.results||[],total:d.total||0,
+    ownerMatch,pipes,ctx,period,
   };
 }
 
-// Formata R$
+// ── FORMATAÇÃO ──
 const fmtBRL=v=>v?`R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}`:'—';
 const hsLink=(id,type,label)=>`<a href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank" style="color:#7c3aed;font-weight:600;font-size:11px">${label}</a>`;
-
 const statusTag=(s)=>{
   if(!s)return'';
   const c=s==='Aberto'?'#e17055':s==='Ganho'?'#27ae60':'#888';
   return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${s}</span>`;
 };
+const icpTag=(icp)=>{
+  if(!icp)return'';
+  const c=icp==='PME'?'#3b82f6':icp==='GE'?'#8b5cf6':'#f59e0b';
+  return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${icp}</span>`;
+};
 
-// Monta contexto descritivo do que foi buscado
-function buildContextLine(ownerMatch,pipes,status,icp,period){
+function buildContextLine(ownerMatch,pipes,ctx,period){
   const parts=[];
   if(ownerMatch)parts.push(`👤 <strong>${ownerMatch.firstName} ${ownerMatch.lastName}</strong>`);
   if(pipes.length)parts.push(`📊 <strong>${pipes.map(p=>PIPES[p]?.label||p).join(', ')}</strong>`);
   else parts.push('📊 <strong>Todos os pipelines</strong>');
-  if(status)parts.push(statusTag(status));
-  if(icp)parts.push(`<span class="tag" style="background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644">${icp}</span>`);
+  if(ctx.status)parts.push(statusTag(ctx.status));
+  if(ctx.icp)parts.push(icpTag(ctx.icp));
+  if(ctx.canal)parts.push(`<span class="tag" style="background:#06b6d422;color:#0891b2;border:1px solid #06b6d444">${ctx.canal}</span>`);
   if(period)parts.push(`📅 ${period.label}`);
+  if(ctx.dateField)parts.push(`<span style="font-size:11px;color:#aaa">(${ctx.dateField==='closedate'?'data de fechamento':'data de criação'})</span>`);
   return parts.join(' · ');
 }
 
-// Renderiza resposta
-async function buildReply(question,intent,data){
-  const{results,total,ownerMatch,pipes,status,icp,period}=data;
+// ── RENDERIZA RESPOSTA ──
+async function buildReply(question,data){
+  const{results,total,ownerMatch,pipes,ctx,period}=data;
   const owners=await getOwners();
-  const ctx=buildContextLine(ownerMatch,pipes,status,icp,period);
+  const intent=ctx.intent;
+  const ctxLine=buildContextLine(ownerMatch,pipes,ctx,period);
+
+  // ── Receita / valor (amount) ──
+  if(ctx.calcAmount){
+    const totalAmount=results.reduce((s,d)=>s+parseFloat(d.properties.amount||0),0);
+    const avgAmount=results.length>0?totalAmount/results.length:0;
+    const byIcp={};
+    results.forEach(d=>{
+      const icp=d.properties.icp||'Sem ICP';
+      if(!byIcp[icp])byIcp[icp]={count:0,total:0};
+      byIcp[icp].count++;byIcp[icp].total+=parseFloat(d.properties.amount||0);
+    });
+    const icpRows=Object.entries(byIcp).sort((a,b)=>b[1].total-a[1].total)
+      .map(([i,v])=>`<tr><td>${icpTag(i)||i}</td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="color:#27ae60;font-weight:700">${fmtBRL(v.total)}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:12px">${ctxLine}</div>
+      <div class="cstats">
+        <div class="cstat"><div class="cstat-n" style="font-size:18px;color:#27ae60">${fmtBRL(totalAmount)}</div><div class="cstat-l">TOTAL VENDIDO</div></div>
+        <div class="cstat"><div class="cstat-n" style="color:#7c3aed">${results.length}</div><div class="cstat-l">NEGÓCIOS</div></div>
+        <div class="cstat"><div class="cstat-n" style="font-size:16px;color:#888">${fmtBRL(avgAmount)}</div><div class="cstat-l">TICKET MÉDIO</div></div>
+      </div>
+      ${icpRows?`<table class="ctable" style="margin-top:10px"><thead><tr><th>ICP</th><th>Qtd</th><th>Total</th></tr></thead><tbody>${icpRows}</tbody></table>`:''}`;
+  }
 
   // ── Por etapa ──
   if(intent==='deals_by_stage'){
     const byStage={};
     results.forEach(d=>{
-      const pipe=d.properties.pipeline,stageId=d.properties.dealstage;
-      const pipeObj=PIPES[pipe];const stageName=pipeObj?.stages.find(s=>s.v===stageId)?.l||stageId||'—';
-      const key=pipe+'::'+stageId;
+      const pipe=d.properties.pipeline,stId=d.properties.dealstage;
+      const pipeObj=PIPES[pipe];const stageName=pipeObj?.stages.find(s=>s.v===stId)?.l||stId||'—';
+      const key=pipe+'::'+stId;
       if(!byStage[key])byStage[key]={pipeline:PIPES[pipe]?.label||pipe,stage:stageName,count:0,valor:0};
       byStage[key].count++;byStage[key].valor+=parseFloat(d.properties.amount||0);
     });
     const rows=Object.values(byStage).sort((a,b)=>b.count-a.count)
       .map(s=>`<tr><td>${s.pipeline}</td><td><strong>${s.stage}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${s.count}</td><td>${s.valor>0?fmtBRL(s.valor):'—'}</td></tr>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctxLine}</div>
       <div class="cstats"><div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div></div>
       <table class="ctable"><thead><tr><th>Pipeline</th><th>Etapa</th><th>Qtd</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
@@ -1039,10 +1173,10 @@ async function buildReply(question,intent,data){
       if(d.properties.status_do_negocio==='Ganho'){byIcp[i].ganho++;byIcp[i].valor+=parseFloat(d.properties.amount||0);}
     });
     const rows=Object.entries(byIcp).sort((a,b)=>b[1].count-a[1].count)
-      .map(([i,v])=>`<tr><td><strong>${i}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
+      .map(([i,v])=>`<tr><td>${icpTag(i)||i}</td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
     const statsHtml=Object.entries(byIcp).sort((a,b)=>b[1].count-a[1].count)
       .map(([i,v])=>`<div class="cstat"><div class="cstat-n">${v.count}</div><div class="cstat-l">${i}</div></div>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctxLine}</div>
       <div class="cstats">${statsHtml}</div>
       <table class="ctable"><thead><tr><th>ICP</th><th>Total</th><th>Ganhos</th><th>Valor Ganho</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
@@ -1063,7 +1197,7 @@ async function buildReply(question,intent,data){
     });
     const rows=Object.entries(byOwner).sort((a,b)=>b[1].count-a[1].count)
       .map(([name,v])=>`<tr><td><strong>${name}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${v.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${v.perdido}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctxLine}</div>
       <table class="ctable"><thead><tr><th>Proprietário</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Valor Ganho</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
@@ -1078,7 +1212,7 @@ async function buildReply(question,intent,data){
       byPipe[p].total++;
     });
     const rows=Object.values(byPipe).map(p=>`<tr><td><strong>${p.label}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${p.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${p.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${p.perdido}</td><td style="text-align:center;font-weight:700">${p.total}</td></tr>`).join('');
-    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctxLine}</div>
       <div class="cstats">
         <div class="cstat"><div class="cstat-n">${results.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
         <div class="cstat"><div class="cstat-n">${results.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
@@ -1090,24 +1224,23 @@ async function buildReply(question,intent,data){
 
   // ── Lista de deals (padrão) ──
   if(!results.length){
-    return`<div style="font-size:13px;color:#555;margin-bottom:8px">${ctx}</div>
+    return`<div style="font-size:13px;color:#555;margin-bottom:8px">${ctxLine}</div>
       <div style="text-align:center;padding:20px;color:#888;font-size:13px">Nenhum negócio encontrado com esses filtros 🔍<br><span style="font-size:11px">Tente reformular ou verificar os filtros</span></div>`;
   }
-
   const statsHtml=`<div class="cstats">
-    <div class="cstat"><div class="cstat-n" style="color:#7c3aed">${total}</div><div class="cstat-l">TOTAL${total>200?' (limite 200)':''}</div></div>
+    <div class="cstat"><div class="cstat-n" style="color:#7c3aed">${total}</div><div class="cstat-l">TOTAL${total>200?' (lim.)':''}</div></div>
     <div class="cstat"><div class="cstat-n" style="color:#e17055">${results.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
     <div class="cstat"><div class="cstat-n" style="color:#27ae60">${results.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
   </div>`;
-
   const lista=results.slice(0,15).map(d=>{
     const p=d.properties;
     const o=owners.find(x=>String(x.id)===String(p.hubspot_owner_id));
     const ownerName=o?`${o.firstName||''} ${o.lastName||''}`.trim():'—';
+    const icp=p.icp;
     return`<div class="clist-item">
       <div>
         <div style="font-weight:700;font-size:13px;color:#1e1b4b;margin-bottom:2px">${p.dealname||'—'}</div>
-        <div style="font-size:11px;color:#888">${PIPES[p.pipeline]?.label||'—'} · ${ownerName}${p.icp?' · '+p.icp:''}</div>
+        <div style="font-size:11px;color:#888">${PIPES[p.pipeline]?.label||'—'} · ${ownerName}${icp?' · '+icp:''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
         ${statusTag(p.status_do_negocio||'—')}
@@ -1115,9 +1248,8 @@ async function buildReply(question,intent,data){
       </div>
     </div>`;
   }).join('');
-
   const mais=total>15?`<div style="text-align:center;font-size:11px;color:#888;margin-top:6px">Mostrando 15 de ${total} negócios</div>`:'';
-  return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>${statsHtml}${lista}${mais}`;
+  return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctxLine}</div>${statsHtml}${lista}${mais}`;
 }
 
 // Busca contatos
@@ -1133,12 +1265,16 @@ async function fetchContacts(question){
   return{results:d.results||[],total:d.total||0};
 }
 
-// Processa a pergunta e retorna HTML da resposta
+// Estado do chat — guarda contexto para perguntas de acompanhamento
 let chatBusy=false;
-async function processChat(question){
-  const intent=detectIntent(question);
+let pendingAmbiguous=null;// guarda pergunta original quando precisar esclarecimento
 
-  if(intent==='contacts'){
+// ── PROCESSO PRINCIPAL DO CHAT ──
+async function processChat(question){
+  const ctx=interpretQuestion(question);
+
+  // ── Contatos ──
+  if(ctx.intent==='contacts'){
     const{results,total}=await fetchContacts(question);
     if(!results.length)return'Nenhum contato encontrado 🔍';
     const lista=results.slice(0,12).map(c=>{
@@ -1149,11 +1285,41 @@ async function processChat(question){
     return`<strong>${total} contato(s)</strong> <span style="font-size:11px;color:#888">• mostrando ${Math.min(12,results.length)}</span><br><br>${lista}`;
   }
 
+  // ── AMBIGUIDADE: "ganho/vendas" sem pipeline → pergunta qual pipeline ──
+  if(ctx.ambiguous==='ganho_pipeline'){
+    pendingAmbiguous=question;
+    return`<div style="background:#ede9fe;border:1px solid #ddd6fe;border-radius:12px;padding:14px;font-size:14px;color:#1e1b4b">
+      🤔 <strong>Qual pipeline você quer consultar?</strong><br><br>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button onclick="respondAmbiguous('vendas')" style="background:#27ae60;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">💰 Vendas (vendas fechadas)</button>
+        <button onclick="respondAmbiguous('cs')" style="background:#0984e3;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">🤝 CS / ACM</button>
+        <button onclick="respondAmbiguous('ambos')" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">📊 Ambos</button>
+      </div>
+    </div>`;
+  }
+
+  // ── Busca e renderiza ──
   const data=await buildAndFetch(question);
-  return buildReply(question,intent,data);
+  return buildReply(question,data);
 }
 
-
+// Trata resposta quando usuário clicar nos botões de ambiguidade
+async function respondAmbiguous(choice){
+  if(!pendingAmbiguous||chatBusy)return;
+  const q=pendingAmbiguous;pendingAmbiguous=null;
+  chatBusy=true;document.getElementById('chat-send').disabled=true;
+  addTyping();
+  try{
+    let pipes=[];
+    if(choice==='vendas')pipes=['11066130'];
+    else if(choice==='cs')pipes=['11066999'];
+    else pipes=['11066130','11066999'];
+    const data=await buildAndFetch(q,pipes);
+    removeTyping();
+    addCMsg('bot',await buildReply(q,data));
+  }catch(e){removeTyping();addCMsg('bot',`<span style="color:#e74c3c">⚠️ Erro: ${e.message}</span>`);}
+  chatBusy=false;document.getElementById('chat-send').disabled=false;
+}
 
 
 function nowHM(){return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
