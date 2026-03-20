@@ -1060,8 +1060,8 @@ async function buildAndFetch(question,overridePipes){
   // Status
   if(ctx.status)filters.push({propertyName:'status_do_negocio',operator:'EQ',value:ctx.status});
 
-  // ICP
-  if(ctx.icp)filters.push({propertyName:'icp',operator:'EQ',value:ctx.icp});
+  // ICP — filtro aplicado no frontend após busca (evita erro de propriedade)
+  // O nome real da propriedade é verificado nos resultados
 
   // Canal
   if(ctx.canal)filters.push({propertyName:'canal__oficial_para_dados_',operator:'EQ',value:ctx.canal});
@@ -1076,17 +1076,27 @@ async function buildAndFetch(question,overridePipes){
     if(period.before)filters.push({propertyName:ctx.dateField,operator:'LTE',value:String(period.before)});
   }
 
-  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','canal__oficial_para_dados_','tamanho_da_empresa','createdate'];
+  // Busca propriedades incluindo variações do nome ICP para descobrir o correto
+  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','icp___perfil_da_empresa','canal__oficial_para_dados_','tamanho_da_empresa','createdate'];
   const body={
     filterGroups:filters.length?[{filters}]:[{}],
     properties:props,limit:200,
     sorts:[{propertyName:ctx.dateField||'createdate',direction:'DESCENDING'}]
   };
   const d=await hs('POST','/crm/v3/objects/deals/search',body);
-  return{
-    results:d.results||[],total:d.total||0,
-    ownerMatch,pipes,ctx,period,
-  };
+  let results=d.results||[];
+  let total=d.total||0;
+  // Filtro de ICP no frontend — detecta automaticamente o nome correto da propriedade
+  if(ctx.icp){
+    const icpVal=ctx.icp;
+    results=results.filter(deal=>{
+      const p=deal.properties;
+      // Testa todos os nomes possíveis da propriedade ICP
+      return(p.icp===icpVal)||(p.icp___perfil_da_empresa===icpVal)||(p['icp___perfil_da_empresa']===icpVal);
+    });
+    total=results.length;
+  }
+  return{results,total,ownerMatch,pipes,ctx,period};
 }
 
 // ── FORMATAÇÃO ──
