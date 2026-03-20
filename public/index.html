@@ -790,7 +790,7 @@ async function buildDealFilters(originalQ){
     const lastN=norm(o.lastName||'');
     // Testa cada parte com word boundary — mínimo 4 chars para evitar falsos positivos
     const parts=[firstN,lastN].filter(p=>p.length>=4);
-    const hit=parts.some(p=>new RegExp('\b'+p+'\b').test(q));
+    const hit=parts.some(p=>{const pad=' '+q+' ';return pad.includes(' '+p+' ')||q===p||q.endsWith(' '+p)||q.startsWith(p+' ');});
     if(hit){ownerMatch=o;break;}
   }
   if(ownerMatch)filters.push({propertyName:'hubspot_owner_id',operator:'EQ',value:String(ownerMatch.id)});
