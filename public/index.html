@@ -812,7 +812,11 @@ async function runBulkValidate(){
 let _ownersCache=null;
 async function getOwners(){
   if(_ownersCache)return _ownersCache;
-  try{const d=await hs('GET','/crm/v3/owners/?limit=100');_ownersCache=d.results||[];}catch{_ownersCache=[];}
+  try{
+    // includeDeactivated=true garante que owners desativados (ex: Beatriz Gouveia) sejam retornados
+    const d=await hs('GET','/crm/v3/owners/?limit=500&includeDeactivated=true');
+    _ownersCache=d.results||[];
+  }catch{_ownersCache=[];}
   return _ownersCache;
 }
 
