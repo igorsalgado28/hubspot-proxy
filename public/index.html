@@ -707,76 +707,106 @@ async function getOwners(){
   return _ownersCache;
 }
 
-// Mapas de palavras → IDs
-const PIPE_KW={'pré-vendas':['11075625'],'pre-vendas':['11075625'],'inbound':['11075625'],'pré vendas':['11075625'],
-  'vendas':['11066130'],'bdr':['15079182'],'outbound':['15079182'],'cs':['11066999'],'acm':['11066999'],
-  'hunter':['663181378'],'scooto':['15000484'],'parcerias':['11847207'],'self trial':['37990225'],'self-trial':['37990225']};
-const STAGE_KW={'mql':'32547660','novo contato':'32547660','validação':'32547661','conexão':'965485473',
-  'conectado':'963329357','sal':'32547662','qualificação':'32547662','sql':'32547663','reunião agendada':'32547663',
-  'map. necessidade':'32538778','mapeamento':'32538778','solução':'32538779','negociação':'32538780',
-  'contratação':'32538781','ganho':'32538782','perdido':'32538783'};
+// Normaliza string: minúsculo + sem acentos
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,' ').trim();
 
-// Detecta período temporal da pergunta → retorna {after?, before?} em ms
+// Mapas de palavras-chave NORMALIZADAS → IDs de pipeline
+const PIPE_KW={
+  'pre-vendas':['11075625'],'pre vendas':['11075625'],'inbound':['11075625'],'pre venda':['11075625'],
+  'bdr':['15079182'],'outbound':['15079182'],
+  'cs':['11066999'],'acm':['11066999'],
+  'hunter':['663181378'],
+  'scooto':['15000484'],
+  'parcerias':['11847207'],
+  'self trial':['37990225']
+};
+// "vendas" tratado separado para não colidir com "pre-vendas"
+
+// Mapas de etapa NORMALIZADOS
+const STAGE_KW={
+  'mql':'32547660','novo contato':'32547660',
+  'validacao':'32547661',
+  'conexao':'965485473',
+  'conectado':'963329357',
+  'sal':'32547662','qualificacao':'32547662',
+  'sql':'32547663','reuniao agendada':'32547663',
+  'map necessidade':'32538778','mapeamento':'32538778',
+  'solucao':'32538779','negociacao':'32538780',
+  'contratacao':'32538781'
+};
+
+// Detecta período temporal → retorna {after?, before?} em ms — opera sobre texto normalizado
 function detectPeriod(q){
   const now=new Date();
-  if(q.match(/\bhoje\b/)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime()};}
-  if(q.match(/essa semana|esta semana/)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime()};}
-  if(q.match(/últimos?\s*7\s*dias?|ultimos?\s*7\s*dias?/)){return{after:now.getTime()-7*86400000};}
-  if(q.match(/últimos?\s*30\s*dias?|ultimos?\s*30\s*dias?/)){return{after:now.getTime()-30*86400000};}
-  if(q.match(/últimos?\s*90\s*dias?|ultimos?\s*90\s*dias?/)){return{after:now.getTime()-90*86400000};}
-  if(q.match(/esse mês|este mês|mês atual|mes atual/)){const s=new Date(now.getFullYear(),now.getMonth(),1);return{after:s.getTime()};}
-  if(q.match(/mês passado|mes passado/)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime()};}
-  if(q.match(/ano passado/)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime()};}
-  if(q.match(/esse ano|este ano|ano atual/)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime()};}
+  if(/\bhoje\b/.test(q)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime()};}
+  if(/essa semana|esta semana/.test(q)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime()};}
+  if(/ultimos?\s*7\s*dias?/.test(q))return{after:now.getTime()-7*86400000};
+  if(/ultimos?\s*30\s*dias?/.test(q))return{after:now.getTime()-30*86400000};
+  if(/ultimos?\s*90\s*dias?/.test(q))return{after:now.getTime()-90*86400000};
+  if(/esse mes|este mes|mes atual/.test(q)){const s=new Date(now.getFullYear(),now.getMonth(),1);return{after:s.getTime()};}
+  if(/mes passado/.test(q)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime()};}
+  if(/ano passado/.test(q)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime()};}
+  if(/esse ano|este ano|ano atual/.test(q)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime()};}
   return null;
 }
 
-// Monta filtros de busca de negócios a partir da pergunta em linguagem natural
-async function buildDealFilters(q){
+// Monta filtros — recebe a pergunta ORIGINAL (com acentos), normaliza internamente
+async function buildDealFilters(originalQ){
+  const q=norm(originalQ); // normalizado para matching
   const filters=[];
   const owners=await getOwners();
 
-  // Pipeline
+  // ── Pipeline ──
   let pipes=[];
-  for(const[kw,ids] of Object.entries(PIPE_KW)){if(q.includes(kw))pipes.push(...ids);}
+  for(const[kw,ids] of Object.entries(PIPE_KW)){
+    if(kw==='cs'){if(/\bcs\b/.test(q))pipes.push(...ids);}
+    else{if(q.includes(kw))pipes.push(...ids);}
+  }
+  // "vendas" isolado: só adiciona pipeline Vendas se não houver "pre vendas" na pergunta
+  if(/\bvendas\b/.test(q)&&!/(pre.?vendas|pre venda)/.test(q))pipes.push('11066130');
   pipes=[...new Set(pipes)];
   if(pipes.length)filters.push({propertyName:'pipeline',operator:'IN',values:pipes});
 
-  // Etapa
+  // ── Etapa ──
   for(const[kw,stageId] of Object.entries(STAGE_KW)){
     if(q.includes(kw)){filters.push({propertyName:'dealstage',operator:'EQ',value:stageId});break;}
   }
 
-  // Status
-  if(q.match(/\baberto[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Aberto'});
-  else if(q.match(/\bganho[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Ganho'});
-  else if(q.match(/\bperdido[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Perdido'});
+  // ── Status ──
+  if(/\babertos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Aberto'});
+  else if(/\bganhos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Ganho'});
+  else if(/\bperdidos?\b/.test(q))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Perdido'});
 
-  // ICP
-  if(q.match(/\bpme\b/))filters.push({propertyName:'icp',operator:'EQ',value:'PME'});
-  else if(q.match(/\bge\b|\bgrande[s]? empresa[s]?\b/))filters.push({propertyName:'icp',operator:'EQ',value:'GE'});
-  else if(q.match(/\bgov\b|\bgoverno\b|\bpúblico\b/))filters.push({propertyName:'icp',operator:'EQ',value:'GOV'});
+  // ── ICP ──
+  if(/\bpme\b/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'PME'});
+  else if(/\bge\b|grandes? empresas?/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'GE'});
+  else if(/\bgov\b|governo|publico/.test(q))filters.push({propertyName:'icp',operator:'EQ',value:'GOV'});
 
-  // Proprietário — busca pelo nome/sobrenome na lista de owners
-  const ownerMatch=owners.find(o=>{
-    const full=`${o.firstName||''} ${o.lastName||''}`.toLowerCase();
-    const parts=full.split(' ').filter(p=>p.length>2);
-    return parts.some(p=>q.includes(p));
-  });
+  // ── Proprietário ──
+  // Normaliza nome do owner para comparar com q (também normalizado)
+  let ownerMatch=null;
+  for(const o of owners){
+    const firstN=norm(o.firstName||'');
+    const lastN=norm(o.lastName||'');
+    // Testa cada parte com word boundary — mínimo 4 chars para evitar falsos positivos
+    const parts=[firstN,lastN].filter(p=>p.length>=4);
+    const hit=parts.some(p=>new RegExp('\b'+p+'\b').test(q));
+    if(hit){ownerMatch=o;break;}
+  }
   if(ownerMatch)filters.push({propertyName:'hubspot_owner_id',operator:'EQ',value:String(ownerMatch.id)});
 
-  // Período
+  // ── Período ──
   const period=detectPeriod(q);
   if(period){
-    // Para ganhos/perdidos usa closedate, para outros usa createdate
-    const isClosedQuery=q.match(/ganho[s]?|perdido[s]?|fechado[s]?|venda[s]?\s+(do|no|de)/);
+    const isClosedQuery=/ganhos?|perdidos?|fechados?/.test(q);
     const dateField=isClosedQuery?'closedate':'createdate';
     if(period.after)filters.push({propertyName:dateField,operator:'GTE',value:String(period.after)});
     if(period.before)filters.push({propertyName:dateField,operator:'LTE',value:String(period.before)});
   }
 
-  return{filters,ownerMatch,pipes,period};
+  return{filters,ownerMatch,pipes,period,q};
 }
+
 
 // Busca negócios com os filtros montados
 async function fetchDeals(filters,limit=200){
@@ -801,12 +831,13 @@ async function fetchContacts(q,limit=50){
 
 // Detecta intenção da pergunta
 function detectIntent(q){
-  if(q.match(/contato[s]?|lead[s]?/))return'contacts';
-  if(q.match(/empresa[s]?|account[s]?|company/))return'companies';
-  if(q.match(/etapa[s]?|estágio[s]?|stage[s]?|por etapa|distribuição/))return'deals_by_stage';
-  if(q.match(/icp|porte|pme|ge\b|gov\b/))return'deals_by_icp';
-  if(q.match(/proprietário[s]?|vendedor[s]?|sdr[s]?|bdr[s]?|dono|responsável|ranking/))return'deals_by_owner';
-  if(q.match(/pipeline[s]?|funil|visão geral|resumo|overview/))return'pipeline_overview';
+  // q já vem normalizado (sem acentos, minúsculo)
+  if(/contatos?|leads?/.test(q))return'contacts';
+  if(/empresas?|accounts?|company/.test(q))return'companies';
+  if(/etapas?|estagios?|stages?|por etapa|distribuicao/.test(q))return'deals_by_stage';
+  if(/\bicp\b|porte|\bpme\b|\bge\b|\bgov\b/.test(q))return'deals_by_icp';
+  if(/proprietarios?|vendedores?|sdrs?|bdrs?|dono|responsavel|ranking|por pessoa/.test(q))return'deals_by_owner';
+  if(/pipelines?|funil|visao geral|resumo|overview/.test(q))return'pipeline_overview';
   return'deals_list';
 }
 
@@ -961,10 +992,11 @@ function addTyping(){
 function removeTyping(){const t=document.getElementById('chat-typing');if(t)t.remove();}
 
 async function processChat(question){
-  const q=question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,' ');
+  // Normaliza para usar em detectIntent e comparações
+  const q=norm(question);
   const owners=await getOwners();
 
-  // Detecta intenção
+  // Detecta intenção (usa q normalizado)
   const intent=detectIntent(q);
 
   // Contatos
@@ -980,14 +1012,14 @@ async function processChat(question){
   }
 
   // Negócios (maioria dos intents)
-  const{filters,ownerMatch,pipes,period}=await buildDealFilters(q);
+  const{filters,ownerMatch,pipes,period}=await buildDealFilters(question);
   const{results,total}=await fetchDeals(filters,200);
 
   if(!results.length&&!['pipeline_overview','deals_by_stage','deals_by_icp','deals_by_owner'].includes(intent)){
     return`Nenhum negócio encontrado com esses filtros. Tente reformular a pergunta — por exemplo, especificando o pipeline, status ou período 🔍`;
   }
 
-  return buildReply(q,intent,results,total,owners,ownerMatch,pipes,period);
+  return buildReply(q,intent,results,total,owners,ownerMatch,pipes,period); // q already normalized
 }
 
 async function sendChat(){
