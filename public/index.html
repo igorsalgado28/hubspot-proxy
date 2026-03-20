@@ -6,6 +6,7 @@
 <title>HubSpot CRM Manager — Alura B2B</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+/* ── BASE (tudo igual ao v135) ── */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(160deg,#fff5f5 0%,#f0f9ff 50%,#f0fff4 100%);min-height:100vh;padding:20px}
 .wrap{max-width:660px;margin:0 auto}
@@ -81,6 +82,74 @@ tr:nth-child(even){background:#fafafa}
 .vdi-meta{color:#666;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .vl{color:#0984e3;font-weight:600;text-decoration:none}
 .vloading{text-align:center;padding:30px;color:#888;font-size:14px}
+
+/* ── MODE SWITCHER (novo) ── */
+.mode-sw{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.mbtn{padding:13px 10px;border-radius:14px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:800;font-size:13px;cursor:pointer;transition:all .25s;text-align:center}
+.mbtn-crm.on{border-color:#FF6B6B;background:#FF6B6B0f;color:#FF6B6B;box-shadow:0 4px 14px #FF6B6B22}
+.mbtn-chat.on{border-color:#7c3aed;background:#7c3aed0f;color:#7c3aed;box-shadow:0 4px 14px #7c3aed22}
+
+/* ── CHAT (novo) ── */
+#view-chat{display:none}
+.chat-wrap{background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.09);overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 230px);min-height:500px}
+.chat-head{padding:16px 20px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:space-between}
+.chat-head-l{display:flex;align-items:center;gap:10px}
+.chat-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.chat-htitle{color:#fff;font-weight:800;font-size:15px}
+.chat-hsub{color:rgba(255,255,255,.65);font-size:11px;margin-top:1px}
+.chat-clear-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.chat-clear-btn:hover{background:rgba(255,255,255,.28)}
+.chat-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-body::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px}
+.cmsg{display:flex;gap:10px;align-items:flex-start;animation:msgIn .2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.cmsg-right{flex-direction:row-reverse}
+.cmsg-ico{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:2px}
+.ico-bot{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff}
+.ico-usr{background:linear-gradient(135deg,#FF6B6B,#ee5a24);color:#fff}
+.cbubble{max-width:88%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.65}
+.cbubble-bot{background:#f5f3ff;border:1px solid #ddd6fe;color:#1e1b4b;border-bottom-left-radius:4px}
+.cbubble-usr{background:linear-gradient(135deg,#FF6B6B,#ee5a24);color:#fff;border-bottom-right-radius:4px}
+.cbubble-bot strong{color:#5b21b6}
+.cbubble-bot .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;margin:1px 2px}
+/* stat cards dentro do chat */
+.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:10px}
+.cstat{background:#fff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 8px;text-align:center}
+.cstat-n{font-size:24px;font-weight:900;color:#7c3aed}
+.cstat-l{font-size:11px;color:#888;font-weight:600;margin-top:2px}
+/* tabela dentro do chat */
+.ctable{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;border-radius:10px;overflow:hidden}
+.ctable th{background:#ede9fe;padding:7px 10px;text-align:left;font-weight:700;color:#5b21b6;white-space:nowrap}
+.ctable td{padding:6px 10px;border-bottom:1px solid #ede9fe;color:#333}
+.ctable tr:last-child td{border-bottom:none}
+.ctable tr:nth-child(even) td{background:#f9f7ff}
+/* lista de itens */
+.clist-item{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:9px 12px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.clist-item a{color:#7c3aed;font-weight:600;font-size:12px;text-decoration:none}
+.cmsg-time{font-size:10px;color:#aaa;margin-top:3px}
+.cmsg-right .cmsg-time{text-align:right}
+.ctyping{display:flex;gap:5px;align-items:center;padding:2px 0}
+.ctyping span{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:tdot .9s infinite}
+.ctyping span:nth-child(2){animation-delay:.18s}
+.ctyping span:nth-child(3){animation-delay:.36s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-foot{padding:14px 18px;border-top:2px solid #f0f0f0;background:#fafafa}
+.chat-sugs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.csug{padding:5px 12px;border-radius:20px;border:1.5px solid #ddd6fe;background:#fff;color:#7c3aed;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
+.csug:hover{background:#ede9fe;border-color:#7c3aed}
+.chat-row{display:flex;gap:8px;align-items:flex-end}
+#chat-inp{flex:1;padding:10px 14px;border-radius:12px;border:2px solid #e8e8e8;font-size:14px;font-family:inherit;resize:none;background:#fff;transition:border .2s;min-height:44px;max-height:110px;line-height:1.5}
+#chat-inp:focus{border-color:#7c3aed;outline:none}
+#chat-send{width:44px;height:44px;border-radius:12px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:18px;cursor:pointer;transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+#chat-send:disabled{background:#ddd;cursor:not-allowed}
+.chat-welcome{text-align:center;padding:36px 20px;color:#888}
+.chat-welcome .wi{font-size:52px;margin-bottom:12px}
+.chat-welcome h3{font-size:17px;font-weight:800;color:#5b21b6;margin-bottom:8px}
+.chat-welcome p{font-size:13px;line-height:1.6;color:#777;max-width:320px;margin:0 auto}
+.chat-examples{display:flex;flex-direction:column;gap:6px;margin-top:16px;text-align:left}
+.chat-ex{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:8px 12px;font-size:12px;color:#5b21b6;cursor:pointer;transition:background .15s}
+.chat-ex:hover{background:#ede9fe}
 </style>
 </head>
 <body>
@@ -91,165 +160,218 @@ tr:nth-child(even){background:#fafafa}
     <p>Alura B2B • API Direta</p>
   </div>
 
-  <div class="tabs">
-    <div class="tab active" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" data-tab="deal" onclick="switchTab('deal')">💼 Negócio</div>
-    <div class="tab" data-tab="company" onclick="switchTab('company')">🏢 Empresa</div>
-    <div class="tab" data-tab="contact" onclick="switchTab('contact')">👤 Contato</div>
-    <div class="tab" data-tab="validate" onclick="switchTab('validate')">🔍 Validar</div>
+  <!-- ── MODE SWITCHER ── -->
+  <div class="mode-sw">
+    <button class="mbtn mbtn-crm on" id="mbtn-crm" onclick="setMode('crm')">⚙️ CRM Manager</button>
+    <button class="mbtn mbtn-chat" id="mbtn-chat" onclick="setMode('chat')">💬 Converse com o Hub</button>
   </div>
 
-  <div class="card">
-
-    <!-- NEGÓCIO -->
-    <div id="tab-deal" class="sec active">
-      <div class="card-header"><span style="font-size:20px">💼</span><div><h2>Negócio</h2><small>Individual ou em massa</small></div></div>
-      <div class="st" style="grid-template-columns:1fr 1fr">
-        <button class="stb" id="st-deal-single" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" onclick="switchSub('deal','single')">💼 Individual</button>
-        <button class="stb" id="st-deal-bulk" onclick="switchSub('deal','bulk')">📋 Em Massa</button>
-      </div>
-      <div id="deal-single">
-        <div class="fg"><label>Nome do Negócio <span>*</span></label><input id="d-name" placeholder="Ex: Alura B2B - Tech Corp"/></div>
-        <div class="fg"><label>Pipeline <span>*</span></label>
-          <select id="d-pipe" onchange="updateStage()">
-            <option value="11075625">Pré-Vendas - Inbound</option><option value="11066130">Vendas</option>
-            <option value="15079182">BDR - Outbound</option><option value="11066999">CS / ACM</option>
-            <option value="15000484">SDR - Scooto</option><option value="11847207">Parcerias</option>
-            <option value="663181378">Hunter - Vendas</option><option value="37990225">Self Trial</option>
-          </select>
-        </div>
-        <div class="ib ib-blue">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
-        <div class="fg"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">Deixe vazio para usar o padrão</span></div>
-        <div class="fg"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: BTG Pactual ou btgpactual.com"/></div>
-        <div class="fg"><label>ID da Empresa no HubSpot</label><input id="d-company-id" placeholder="Ex: 8987233824 (opcional — garante associação)"/><span class="hint">Cole o ID da empresa para associar com 100% de certeza</span></div>
-        <div class="fg"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="25000"/></div>
-        <div class="fg"><label>Observações</label><textarea id="d-obs" rows="3" placeholder="Notas..."></textarea></div>
-        <button class="btn btn-red" id="d-btn" onclick="createDeal()">💼 Criar Negócio</button>
-        <div id="d-result"></div>
-      </div>
-      <div id="deal-bulk" style="display:none">
+  <!-- ══════════════════════════════
+       VIEW CRM (intacto do v135)
+  ══════════════════════════════ -->
+  <div id="view-crm">
+    <div class="tabs">
+      <div class="tab active" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" data-tab="deal" onclick="switchTab('deal')">💼 Negócio</div>
+      <div class="tab" data-tab="company" onclick="switchTab('company')">🏢 Empresa</div>
+      <div class="tab" data-tab="contact" onclick="switchTab('contact')">👤 Contato</div>
+      <div class="tab" data-tab="validate" onclick="switchTab('validate')">🔍 Validar</div>
+    </div>
+    <div class="card">
+      <!-- NEGÓCIO -->
+      <div id="tab-deal" class="sec active">
+        <div class="card-header"><span style="font-size:20px">💼</span><div><h2>Negócio</h2><small>Individual ou em massa</small></div></div>
         <div class="st" style="grid-template-columns:1fr 1fr">
-          <button class="stb" id="st-db-text" style="border-color:#e17055;background:#e1705518;color:#e17055" onclick="switchBM('deal','text')">✏️ Digitar lista</button>
-          <button class="stb" id="st-db-file" onclick="switchBM('deal','file')">📎 Enviar arquivo</button>
+          <button class="stb" id="st-deal-single" style="border-color:#FF6B6B;background:#FF6B6B18;color:#FF6B6B" onclick="switchSub('deal','single')">💼 Individual</button>
+          <button class="stb" id="st-deal-bulk" onclick="switchSub('deal','bulk')">📋 Em Massa</button>
         </div>
-        <div class="cfg">
-          <div class="cfg-title">⚙️ Configurações Globais</div>
-          <div class="fg"><label>Pipeline padrão</label>
-            <select id="db-pipe" onchange="updateBulkStage()">
+        <div id="deal-single">
+          <div class="fg"><label>Nome do Negócio <span>*</span></label><input id="d-name" placeholder="Ex: Alura B2B - Tech Corp"/></div>
+          <div class="fg"><label>Pipeline <span>*</span></label>
+            <select id="d-pipe" onchange="updateStage()">
               <option value="11075625">Pré-Vendas - Inbound</option><option value="11066130">Vendas</option>
               <option value="15079182">BDR - Outbound</option><option value="11066999">CS / ACM</option>
               <option value="15000484">SDR - Scooto</option><option value="11847207">Parcerias</option>
               <option value="663181378">Hunter - Vendas</option><option value="37990225">Self Trial</option>
             </select>
           </div>
-          <div class="fg"><label>Etapa</label><select id="db-stage"></select></div>
-          <div class="fg"><label>Proprietário padrão</label><input id="db-owner" placeholder="fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha</span></div>
+          <div class="ib ib-blue">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
+          <div class="fg"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">Deixe vazio para usar o padrão</span></div>
+          <div class="fg"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: BTG Pactual ou btgpactual.com"/></div>
+          <div class="fg"><label>ID da Empresa no HubSpot</label><input id="d-company-id" placeholder="Ex: 8987233824 (opcional — garante associação)"/><span class="hint">Cole o ID da empresa para associar com 100% de certeza</span></div>
+          <div class="fg"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="25000"/></div>
+          <div class="fg"><label>Observações</label><textarea id="d-obs" rows="3" placeholder="Notas..."></textarea></div>
+          <button class="btn btn-red" id="d-btn" onclick="createDeal()">💼 Criar Negócio</button>
+          <div id="d-result"></div>
         </div>
-        <div id="db-text-area">
-          <div class="fg"><label>Lista de Empresas</label>
-            <textarea id="db-list" rows="6" style="font-family:monospace" placeholder="Uma por linha:&#10;Tech Corp&#10;Alura, alura.com.br&#10;Fiap, fiap.com.br, 11066130, vendedor@alura.com.br"></textarea>
-            <span class="hint">Colunas: Empresa, Domínio, Pipeline ID, Proprietário, Valor, Obs</span>
+        <div id="deal-bulk" style="display:none">
+          <div class="st" style="grid-template-columns:1fr 1fr">
+            <button class="stb" id="st-db-text" style="border-color:#e17055;background:#e1705518;color:#e17055" onclick="switchBM('deal','text')">✏️ Digitar lista</button>
+            <button class="stb" id="st-db-file" onclick="switchBM('deal','file')">📎 Enviar arquivo</button>
           </div>
-        </div>
-        <div id="db-file-area" style="display:none">
-          <div class="fd" style="border-color:#e17055;background:#fff8f6">
-            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'deal')"/>
-            <div style="font-size:28px;margin-bottom:6px">📂</div>
-            <div id="db-fname" style="font-size:13px;font-weight:700;color:#e17055">Clique ou arraste aqui</div>
-            <div style="font-size:11px;color:#aaa;margin-top:4px">CSV, XLS ou XLSX</div>
+          <div class="cfg">
+            <div class="cfg-title">⚙️ Configurações Globais</div>
+            <div class="fg"><label>Pipeline padrão</label>
+              <select id="db-pipe" onchange="updateBulkStage()">
+                <option value="11075625">Pré-Vendas - Inbound</option><option value="11066130">Vendas</option>
+                <option value="15079182">BDR - Outbound</option><option value="11066999">CS / ACM</option>
+                <option value="15000484">SDR - Scooto</option><option value="11847207">Parcerias</option>
+                <option value="663181378">Hunter - Vendas</option><option value="37990225">Self Trial</option>
+              </select>
+            </div>
+            <div class="fg"><label>Etapa</label><select id="db-stage"></select></div>
+            <div class="fg"><label>Proprietário padrão</label><input id="db-owner" placeholder="fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha</span></div>
           </div>
-          <div id="db-finfo" style="display:none;margin-top:8px" class="ib ib-orange"></div>
+          <div id="db-text-area">
+            <div class="fg"><label>Lista de Empresas</label>
+              <textarea id="db-list" rows="6" style="font-family:monospace" placeholder="Uma por linha:&#10;Tech Corp&#10;Alura, alura.com.br&#10;Fiap, fiap.com.br, 11066130, vendedor@alura.com.br"></textarea>
+              <span class="hint">Colunas: Empresa, Domínio, Pipeline ID, Proprietário, Valor, Obs</span>
+            </div>
+          </div>
+          <div id="db-file-area" style="display:none">
+            <div class="fd" style="border-color:#e17055;background:#fff8f6">
+              <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'deal')"/>
+              <div style="font-size:28px;margin-bottom:6px">📂</div>
+              <div id="db-fname" style="font-size:13px;font-weight:700;color:#e17055">Clique ou arraste aqui</div>
+              <div style="font-size:11px;color:#aaa;margin-top:4px">CSV, XLS ou XLSX</div>
+            </div>
+            <div id="db-finfo" style="display:none;margin-top:8px" class="ib ib-orange"></div>
+          </div>
+          <button class="btn btn-orange" style="margin-top:16px" id="db-btn" onclick="runBulkDeals()">💼 Criar Negócios</button>
+          <div id="db-prog" style="display:none" class="pb">
+            <div class="row"><span style="font-weight:600;color:#555">Criando...</span><span id="db-ptxt" style="color:#e17055;font-weight:700">0/0</span></div>
+            <div class="pb-track"><div class="pb-fill" id="db-pbar" style="background:linear-gradient(90deg,#e17055,#d35400);width:0%"></div></div>
+          </div>
+          <div id="db-results" style="margin-top:12px"></div>
         </div>
-        <button class="btn btn-orange" style="margin-top:16px" id="db-btn" onclick="runBulkDeals()">💼 Criar Negócios</button>
-        <div id="db-prog" style="display:none" class="pb">
-          <div class="row"><span style="font-weight:600;color:#555">Criando...</span><span id="db-ptxt" style="color:#e17055;font-weight:700">0/0</span></div>
-          <div class="pb-track"><div class="pb-fill" id="db-pbar" style="background:linear-gradient(90deg,#e17055,#d35400);width:0%"></div></div>
+      </div>
+      <!-- EMPRESA -->
+      <div id="tab-company" class="sec">
+        <div class="card-header"><span style="font-size:20px">🏢</span><div><h2>Empresa</h2><small>Registra empresa no HubSpot</small></div></div>
+        <div class="fg"><label>Nome <span>*</span></label><input id="c-name" placeholder="Ex: Tech Corp Ltda"/></div>
+        <div class="fg"><label>Domínio</label><input id="c-domain" placeholder="Ex: techcorp.com.br"/></div>
+        <div class="fg"><label>Segmento</label><input id="c-seg" placeholder="Ex: Tecnologia, Saúde..."/></div>
+        <div class="fg"><label>Nº de Funcionários</label><input id="c-emp" type="number" placeholder="500"/></div>
+        <div class="g2">
+          <div class="fg"><label>Cidade</label><input id="c-city" placeholder="São Paulo"/></div>
+          <div class="fg"><label>Estado</label><input id="c-state" placeholder="SP"/></div>
         </div>
-        <div id="db-results" style="margin-top:12px"></div>
+        <div class="fg"><label>Observações</label><textarea id="c-obs" rows="3" placeholder="Notas..."></textarea></div>
+        <button class="btn btn-teal" id="c-btn" onclick="createCompany()">🏢 Criar Empresa</button>
+        <div id="c-result"></div>
       </div>
-    </div>
-
-    <!-- EMPRESA -->
-    <div id="tab-company" class="sec">
-      <div class="card-header"><span style="font-size:20px">🏢</span><div><h2>Empresa</h2><small>Registra empresa no HubSpot</small></div></div>
-      <div class="fg"><label>Nome <span>*</span></label><input id="c-name" placeholder="Ex: Tech Corp Ltda"/></div>
-      <div class="fg"><label>Domínio</label><input id="c-domain" placeholder="Ex: techcorp.com.br"/></div>
-      <div class="fg"><label>Segmento</label><input id="c-seg" placeholder="Ex: Tecnologia, Saúde..."/></div>
-      <div class="fg"><label>Nº de Funcionários</label><input id="c-emp" type="number" placeholder="500"/></div>
-      <div class="g2">
-        <div class="fg"><label>Cidade</label><input id="c-city" placeholder="São Paulo"/></div>
-        <div class="fg"><label>Estado</label><input id="c-state" placeholder="SP"/></div>
+      <!-- CONTATO -->
+      <div id="tab-contact" class="sec">
+        <div class="card-header"><span style="font-size:20px">👤</span><div><h2>Contato</h2><small>Adiciona contato ao CRM</small></div></div>
+        <div class="g2">
+          <div class="fg"><label>Nome <span>*</span></label><input id="ct-first" placeholder="João"/></div>
+          <div class="fg"><label>Sobrenome</label><input id="ct-last" placeholder="Silva"/></div>
+        </div>
+        <div class="fg"><label>E-mail <span>*</span></label><input id="ct-email" type="email" placeholder="joao@empresa.com.br"/></div>
+        <div class="fg"><label>Telefone</label><input id="ct-phone" placeholder="+55 11 99999-0000"/></div>
+        <div class="fg"><label>Cargo</label><input id="ct-role" placeholder="Diretor de TI"/></div>
+        <div class="fg"><label>Empresa</label><input id="ct-company" placeholder="Nome da empresa"/></div>
+        <div class="fg"><label>Origem do Lead</label><input id="ct-origin" placeholder="Inbound, Outbound..."/></div>
+        <div class="fg"><label>Observações</label><textarea id="ct-obs" rows="3" placeholder="Notas..."></textarea></div>
+        <button class="btn btn-blue" id="ct-btn" onclick="createContact()">👤 Criar Contato</button>
+        <div id="ct-result"></div>
       </div>
-      <div class="fg"><label>Observações</label><textarea id="c-obs" rows="3" placeholder="Notas..."></textarea></div>
-      <button class="btn btn-teal" id="c-btn" onclick="createCompany()">🏢 Criar Empresa</button>
-      <div id="c-result"></div>
-    </div>
-
-    <!-- CONTATO -->
-    <div id="tab-contact" class="sec">
-      <div class="card-header"><span style="font-size:20px">👤</span><div><h2>Contato</h2><small>Adiciona contato ao CRM</small></div></div>
-      <div class="g2">
-        <div class="fg"><label>Nome <span>*</span></label><input id="ct-first" placeholder="João"/></div>
-        <div class="fg"><label>Sobrenome</label><input id="ct-last" placeholder="Silva"/></div>
-      </div>
-      <div class="fg"><label>E-mail <span>*</span></label><input id="ct-email" type="email" placeholder="joao@empresa.com.br"/></div>
-      <div class="fg"><label>Telefone</label><input id="ct-phone" placeholder="+55 11 99999-0000"/></div>
-      <div class="fg"><label>Cargo</label><input id="ct-role" placeholder="Diretor de TI"/></div>
-      <div class="fg"><label>Empresa</label><input id="ct-company" placeholder="Nome da empresa"/></div>
-      <div class="fg"><label>Origem do Lead</label><input id="ct-origin" placeholder="Inbound, Outbound..."/></div>
-      <div class="fg"><label>Observações</label><textarea id="ct-obs" rows="3" placeholder="Notas..."></textarea></div>
-      <button class="btn btn-blue" id="ct-btn" onclick="createContact()">👤 Criar Contato</button>
-      <div id="ct-result"></div>
-    </div>
-
-    <!-- VALIDAR -->
-    <div id="tab-validate" class="sec">
-      <div class="card-header"><span style="font-size:20px">🔍</span><div><h2>Validar Empresa</h2><small>Verifica aptidão para prospecção</small></div></div>
-      <div class="st" style="grid-template-columns:1fr 1fr">
-        <button class="stb" id="st-val-single" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchSub('validate','single')">🔍 Individual</button>
-        <button class="stb" id="st-val-bulk" onclick="switchSub('validate','bulk')">📋 Em Massa</button>
-      </div>
-      <div id="validate-single">
-        <div class="ib ib-green">🔍 Informe o nome, o domínio, ou ambos para validar.</div>
-        <div class="ib ib-yellow">💡 Você pode validar só pelo nome, só pelo domínio, ou pelos dois juntos.</div>
-        <div class="fg"><label>Nome da Empresa</label><input id="v-name" placeholder="Ex: Omnibees"/></div>
-        <div class="fg"><label>Domínio</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
-        <button class="btn btn-green" id="v-btn" onclick="validateSingle()">🔍 Validar</button>
-        <div id="v-result"></div>
-      </div>
-      <div id="validate-bulk" style="display:none">
+      <!-- VALIDAR -->
+      <div id="tab-validate" class="sec">
+        <div class="card-header"><span style="font-size:20px">🔍</span><div><h2>Validar Empresa</h2><small>Verifica aptidão para prospecção</small></div></div>
         <div class="st" style="grid-template-columns:1fr 1fr">
-          <button class="stb" id="st-vb-text" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchBM('validate','text')">✏️ Digitar lista</button>
-          <button class="stb" id="st-vb-file" onclick="switchBM('validate','file')">📎 Enviar arquivo</button>
+          <button class="stb" id="st-val-single" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchSub('validate','single')">🔍 Individual</button>
+          <button class="stb" id="st-val-bulk" onclick="switchSub('validate','bulk')">📋 Em Massa</button>
         </div>
-        <div id="vb-text-area">
-          <div class="fg"><label>Lista de Empresas</label>
-            <textarea id="vb-list" rows="6" style="font-family:monospace" placeholder="Omnibees&#10;Nubank, nubank.com.br&#10;omnibees.com"></textarea>
-            <span class="hint">Formato: Nome | Nome, dominio.com | dominio.com</span>
+        <div id="validate-single">
+          <div class="ib ib-green">🔍 Informe o nome, o domínio, ou ambos para validar.</div>
+          <div class="ib ib-yellow">💡 Você pode validar só pelo nome, só pelo domínio, ou pelos dois juntos.</div>
+          <div class="fg"><label>Nome da Empresa</label><input id="v-name" placeholder="Ex: Omnibees"/></div>
+          <div class="fg"><label>Domínio</label><input id="v-domain" placeholder="Ex: omnibees.com"/></div>
+          <button class="btn btn-green" id="v-btn" onclick="validateSingle()">🔍 Validar</button>
+          <div id="v-result"></div>
+        </div>
+        <div id="validate-bulk" style="display:none">
+          <div class="st" style="grid-template-columns:1fr 1fr">
+            <button class="stb" id="st-vb-text" style="border-color:#96CEB4;background:#96CEB418;color:#27ae60" onclick="switchBM('validate','text')">✏️ Digitar lista</button>
+            <button class="stb" id="st-vb-file" onclick="switchBM('validate','file')">📎 Enviar arquivo</button>
           </div>
-        </div>
-        <div id="vb-file-area" style="display:none">
-          <div class="fd">
-            <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'validate')"/>
-            <div style="font-size:28px;margin-bottom:6px">📂</div>
-            <div id="vb-fname" style="font-size:13px;font-weight:700;color:#27ae60">Clique ou arraste aqui</div>
-            <div style="font-size:11px;color:#aaa;margin-top:4px">Col 1: Nome • Col 2: Domínio (opcional)</div>
+          <div id="vb-text-area">
+            <div class="fg"><label>Lista de Empresas</label>
+              <textarea id="vb-list" rows="6" style="font-family:monospace" placeholder="Omnibees&#10;Nubank, nubank.com.br&#10;omnibees.com"></textarea>
+              <span class="hint">Formato: Nome | Nome, dominio.com | dominio.com</span>
+            </div>
           </div>
-          <div id="vb-finfo" style="display:none;margin-top:8px" class="ib ib-green"></div>
+          <div id="vb-file-area" style="display:none">
+            <div class="fd">
+              <input type="file" accept=".csv,.xls,.xlsx" onchange="handleFile(event,'validate')"/>
+              <div style="font-size:28px;margin-bottom:6px">📂</div>
+              <div id="vb-fname" style="font-size:13px;font-weight:700;color:#27ae60">Clique ou arraste aqui</div>
+              <div style="font-size:11px;color:#aaa;margin-top:4px">Col 1: Nome • Col 2: Domínio (opcional)</div>
+            </div>
+            <div id="vb-finfo" style="display:none;margin-top:8px" class="ib ib-green"></div>
+          </div>
+          <button class="btn btn-green" style="margin-top:16px" id="vb-btn" onclick="runBulkValidate()">🔍 Validar Empresas</button>
+          <div id="vb-prog" style="display:none" class="pb">
+            <div class="row"><span style="font-weight:600;color:#555">Validando...</span><span id="vb-ptxt" style="color:#27ae60;font-weight:700">0/0</span></div>
+            <div class="pb-track"><div class="pb-fill" id="vb-pbar" style="background:linear-gradient(90deg,#96CEB4,#27ae60);width:0%"></div></div>
+          </div>
+          <div id="vb-results" style="margin-top:12px"></div>
         </div>
-        <button class="btn btn-green" style="margin-top:16px" id="vb-btn" onclick="runBulkValidate()">🔍 Validar Empresas</button>
-        <div id="vb-prog" style="display:none" class="pb">
-          <div class="row"><span style="font-weight:600;color:#555">Validando...</span><span id="vb-ptxt" style="color:#27ae60;font-weight:700">0/0</span></div>
-          <div class="pb-track"><div class="pb-fill" id="vb-pbar" style="background:linear-gradient(90deg,#96CEB4,#27ae60);width:0%"></div></div>
-        </div>
-        <div id="vb-results" style="margin-top:12px"></div>
       </div>
     </div>
+  </div><!-- /view-crm -->
 
-  </div>
+  <!-- ══════════════════════════════
+       VIEW CHAT (novo)
+  ══════════════════════════════ -->
+  <div id="view-chat">
+    <div class="chat-wrap">
+      <div class="chat-head">
+        <div class="chat-head-l">
+          <div class="chat-avatar">🤖</div>
+          <div>
+            <div class="chat-htitle">Converse com o Hub</div>
+            <div class="chat-hsub">Busca direta na API do HubSpot</div>
+          </div>
+        </div>
+        <button class="chat-clear-btn" onclick="clearChat()">🗑️ Limpar</button>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="wi">🤖</div>
+          <h3>Olá! Sou seu assistente HubSpot</h3>
+          <p>Pergunte qualquer coisa sobre negócios, pipelines, ICPs, proprietários, contatos e empresas.</p>
+          <div class="chat-examples">
+            <div class="chat-ex" onclick="sendEx(this)">📊 Quantos negócios abertos temos no Pré-Vendas?</div>
+            <div class="chat-ex" onclick="sendEx(this)">👤 Negócios abertos do Vitor Quaresma</div>
+            <div class="chat-ex" onclick="sendEx(this)">💰 Vendas ganhas no mês passado por ICP</div>
+            <div class="chat-ex" onclick="sendEx(this)">🎯 Quantos SQLs foram gerados essa semana?</div>
+            <div class="chat-ex" onclick="sendEx(this)">📋 Pipeline de Vendas por etapa</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-foot">
+        <div class="chat-sugs" id="chat-sugs">
+          <span class="csug" onclick="sendSug(this)">Negócios abertos hoje</span>
+          <span class="csug" onclick="sendSug(this)">Vendas por ICP esse mês</span>
+          <span class="csug" onclick="sendSug(this)">SQLs dessa semana</span>
+          <span class="csug" onclick="sendSug(this)">Negócios abertos no BDR</span>
+        </div>
+        <div class="chat-row">
+          <textarea id="chat-inp" placeholder="Pergunte algo sobre seus dados no HubSpot..." rows="1" onkeydown="chatKey(event)" oninput="autoGrow(this)"></textarea>
+          <button id="chat-send" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- /view-chat -->
+
   <div class="footer">HubSpot API Direta • Account 21748317</div>
 </div>
 
 <script>
+/* ══════════════════════════════════════════════════════
+   CONSTANTES E HELPERS (iguais ao v135)
+══════════════════════════════════════════════════════ */
 const PROXY='https://hubspot-proxy-psi.vercel.app/api/hubspot';
 const AID='21748317', DO='1523113565';
 const PD=['gmail.com','googlemail.com','yahoo.com','yahoo.com.br','hotmail.com','hotmail.com.br','outlook.com','outlook.com.br','live.com','live.com.br','icloud.com','me.com','uol.com.br','bol.com.br','terra.com.br','ig.com.br','globo.com','oi.com.br'];
@@ -288,22 +410,10 @@ const findCo=async(name,domain)=>{
     const results=d.results||[];
     if(!results.length)return null;
     const nL=cn.toLowerCase();
-    if(cd&&!isP(cd)){
-      const m=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd);
-      if(m)return m.id;
-    }
-    const m2=results.find(c=>(c.properties?.name||'').toLowerCase()===nL);
-    if(m2)return m2.id;
-    const m3=results.find(c=>{
-      const cN=(c.properties?.name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-      return cN===nL.replace(/[^a-z0-9]/g,'');
-    });
-    if(m3)return m3.id;
-    const m4=results.find(c=>{
-      const cN=(c.properties?.name||'').toLowerCase();
-      return(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);
-    });
-    if(m4)return m4.id;
+    if(cd&&!isP(cd)){const m=results.find(c=>(c.properties?.domain||'').toLowerCase()===cd);if(m)return m.id;}
+    const m2=results.find(c=>(c.properties?.name||'').toLowerCase()===nL);if(m2)return m2.id;
+    const m3=results.find(c=>{const cN=(c.properties?.name||'').toLowerCase().replace(/[^a-z0-9]/g,'');return cN===nL.replace(/[^a-z0-9]/g,'');});if(m3)return m3.id;
+    const m4=results.find(c=>{const cN=(c.properties?.name||'').toLowerCase();return(cN.includes(nL)&&nL.length>=4)||(nL.includes(cN)&&cN.length>=4);});if(m4)return m4.id;
     return null;
   }catch(e){console.error('findCo',e.message);return null;}
 };
@@ -313,14 +423,21 @@ const findCtsByDomain=async domain=>{
 };
 const mkDeal=async(props,coId,ctIds)=>{
   const deal=await hs('POST','/crm/v3/objects/deals',{properties:props});
-  const id=deal.id;
-  const as=[];
+  const id=deal.id;const as=[];
   if(coId)as.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/companies/${coId}/deal_to_company`,{}));
   (ctIds||[]).forEach(cid=>as.push(hs('PUT',`/crm/v4/objects/deals/${id}/associations/contacts/${cid}/deal_to_contact`,{})));
   await Promise.allSettled(as);return id;
 };
 
-// ── UI helpers ──
+/* ── MODE SWITCH ── */
+function setMode(m){
+  document.getElementById('view-crm').style.display=m==='crm'?'block':'none';
+  document.getElementById('view-chat').style.display=m==='chat'?'block':'none';
+  document.getElementById('mbtn-crm').className='mbtn mbtn-crm'+(m==='crm'?' on':'');
+  document.getElementById('mbtn-chat').className='mbtn mbtn-chat'+(m==='chat'?' on':'');
+}
+
+/* ── UI CRM ── */
 const TC={deal:'#FF6B6B',company:'#4ECDC4',contact:'#45B7D1',validate:'#96CEB4'};
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(x=>{x.style.borderColor='#e8e8e8';x.style.background='#fff';x.style.color='#999';x.style.boxShadow='none';});
@@ -358,7 +475,7 @@ function showR(id,type,title,msg,link){
 }
 function setB(id,loading,label){const b=document.getElementById(id);if(!b)return;b.disabled=loading;b.textContent=loading?'⏳ Processando...':label;}
 
-// ── CREATE DEAL ──
+/* ── CREATE DEAL ── */
 async function createDeal(){
   const name=document.getElementById('d-name').value.trim();
   if(!name)return showR('d-result','error','Erro','Nome do negócio é obrigatório.');
@@ -380,8 +497,7 @@ async function createDeal(){
   }catch(e){showR('d-result','error','Erro',e.message);}
   setB('d-btn',false,'💼 Criar Negócio');
 }
-
-// ── CREATE COMPANY ──
+/* ── CREATE COMPANY ── */
 async function createCompany(){
   const name=document.getElementById('c-name').value.trim();
   if(!name)return showR('c-result','error','Erro','Nome da empresa é obrigatório.');
@@ -398,8 +514,7 @@ async function createCompany(){
   }catch(e){showR('c-result','error','Erro',e.message);}
   setB('c-btn',false,'🏢 Criar Empresa');
 }
-
-// ── CREATE CONTACT ──
+/* ── CREATE CONTACT ── */
 async function createContact(){
   const first=document.getElementById('ct-first').value.trim(),email=document.getElementById('ct-email').value.trim();
   if(!first||!email)return showR('ct-result','error','Erro','Nome e e-mail são obrigatórios.');
@@ -416,16 +531,12 @@ async function createContact(){
   }catch(e){showR('ct-result','error','Erro',e.message);}
   setB('ct-btn',false,'👤 Criar Contato');
 }
-
-// ── VALIDATE LOGIC ──
-// ✅ MUDANÇA PRINCIPAL: agora coleta TODOS os blockers em vez de parar no primeiro
+/* ── VALIDATE ── */
 async function doValidate(name,domain){
   const today=new Date(),d90=new Date(today-90*24*60*60*1000),d30=new Date(today-30*24*60*60*1000);
   const cd=(domain||'').replace(/^@/,'').trim().toLowerCase();
   const cn=(name||'').trim();
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
-
-  // Busca empresa via endpoint dedicado do proxy
   let mc=null;
   try{
     const params=new URLSearchParams();
@@ -433,16 +544,10 @@ async function doValidate(name,domain){
     if(cd&&!isP(cd))params.set('domain',cd);
     const r=await fetch(`${PROXY}?path=find-company&${params.toString()}`);
     const d=await r.json();
-    if(d.id){
-      mc={id:d.id,properties:{name:d.name,domain:cd||''}};
-    }
+    if(d.id){mc={id:d.id,properties:{name:d.name,domain:cd||''}};}
   }catch{}
-
   if(!mc)return{can:true,co:null,deals:[],contacts:[],blockers:[],reason:'Empresa não encontrada no HubSpot. Sem histórico de prospecção.'};
-
   const mid=parseInt(mc.id);
-
-  // Busca negócios via associações
   let allDeals=[];
   try{
     const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/deals?limit=50`);
@@ -450,153 +555,56 @@ async function doValidate(name,domain){
     if(ids.length){
       for(let i=0;i<ids.length;i+=10){
         const batch=ids.slice(i,i+10);
-        try{
-          const r=await hs('POST','/crm/v3/objects/deals/batch/read',{
-            inputs:batch.map(id=>({id:String(id)})),
-            properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']
-          });
-          allDeals.push(...(r.results||[]));
-        }catch{}
+        try{const r=await hs('POST','/crm/v3/objects/deals/batch/read',{inputs:batch.map(id=>({id:String(id)})),properties:['dealname','pipeline','status_do_negocio','estagio_de_ciclo_de_vida___negocio','data_de_churn','closedate']});allDeals.push(...(r.results||[]));}catch{}
       }
     }
   }catch(e){console.error('assoc deals error',e.message);}
-
-  // Busca contatos via associações
   let allContacts=[];
   try{
     const assoc=await hs('GET',`/crm/v4/objects/companies/${mid}/associations/contacts?limit=20`);
     const ids=(assoc.results||[]).map(r=>r.toObjectId).filter(Boolean);
-    if(ids.length){
-      const r=await hs('POST','/crm/v3/objects/contacts/batch/read',{
-        inputs:ids.map(id=>({id:String(id)})),
-        properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']
-      });
-      allContacts=r.results||[];
-    }
+    if(ids.length){const r=await hs('POST','/crm/v3/objects/contacts/batch/read',{inputs:ids.map(id=>({id:String(id)})),properties:['firstname','lastname','email','estagio_de_ciclo_de_vida___contato']});allContacts=r.results||[];}
   }catch{}
-
-  // ✅ MUDANÇA: coleta TODOS os blockers sem parar no primeiro
   const blockers=[];
   const relDeals=allDeals.filter(d=>RP.includes(d.properties.pipeline));
-
   for(const deal of relDeals){
     const p=deal.properties,sL=(p.status_do_negocio||'').toLowerCase(),cL=(p.estagio_de_ciclo_de_vida___negocio||'').toLowerCase();
     const pipe=PN[p.pipeline]||p.pipeline,link=`https://app.hubspot.com/contacts/${AID}/record/0-3/${deal.id}`;
-
-    // Regra 1: negócio em aberto
-    if(sL==='aberto'){
-      blockers.push({rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link});
-      continue; // esse deal já bloqueou, não precisa checar outras regras nele
-    }
-    // Regra 2: cliente ativo
-    if(cL==='cliente'&&sL!=='perdido'){
-      blockers.push({rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link});
-      continue;
-    }
-    // Regra 3: ex-cliente com churn ≤ 90 dias
-    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){
-      const ch=new Date(p.data_de_churn);
-      if(ch>=d90){
-        blockers.push({rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias): ${p.dealname}`,link});
-        continue;
-      }
-    }
-    // Regra 4: perdido ≤ 30 dias
-    if(sL==='perdido'&&p.closedate){
-      const cl=new Date(p.closedate);
-      if(cl>=d30){
-        blockers.push({rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});
-        continue;
-      }
-    }
-    // Regra 5: Ganho no Pré-Vendas Inbound ≤ 30 dias (SQL gerado — reunião agendada recente)
-    if(sL==='ganho'&&p.pipeline==='11075625'&&p.closedate){
-      const cl=new Date(p.closedate);
-      if(cl>=d30){
-        blockers.push({rule:'sql_recente',msg:`SQL gerado recentemente — negócio ganho no pipeline "Pré-Vendas - Inbound" em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});
-      }
-    }
+    if(sL==='aberto'){blockers.push({rule:'aberto',msg:`Negócio em aberto no pipeline "${pipe}": ${p.dealname}`,link});continue;}
+    if(cL==='cliente'&&sL!=='perdido'){blockers.push({rule:'cliente',msg:`Empresa é cliente ativo (Ciclo de Vida = "Cliente"): ${p.dealname}`,link});continue;}
+    if(['ex-cliente','cliente'].includes(cL)&&p.data_de_churn){const ch=new Date(p.data_de_churn);if(ch>=d90){blockers.push({rule:'churn',msg:`Churn recente em ${ch.toLocaleDateString('pt-BR')} (menos de 90 dias): ${p.dealname}`,link});continue;}}
+    if(sL==='perdido'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blockers.push({rule:'perdido_recente',msg:`Negócio perdido em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});continue;}}
+    if(sL==='ganho'&&p.pipeline==='11075625'&&p.closedate){const cl=new Date(p.closedate);if(cl>=d30){blockers.push({rule:'sql_recente',msg:`SQL gerado recentemente — negócio ganho no pipeline "Pré-Vendas - Inbound" em ${cl.toLocaleDateString('pt-BR')} (menos de 30 dias): ${p.dealname}`,link});}}
   }
-
-  // Regra 5: contatos marcados como cliente ativo
   for(const c of allContacts){
-    if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){
-      blockers.push({rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`});
-    }
+    if((c.properties.estagio_de_ciclo_de_vida___contato||'').toLowerCase()==='cliente'){blockers.push({rule:'contato_cliente',msg:`Contato marcado como cliente ativo: ${c.properties.firstname||''} ${c.properties.lastname||''} (${c.properties.email||''})`,link:`https://app.hubspot.com/contacts/${AID}/record/0-1/${c.id}`});}
   }
-
-  // Mantém compatibilidade com código legado que usa r.blocker (pega o primeiro se houver)
   const blocker=blockers.length>0?blockers[0]:null;
-
   return{can:blockers.length===0,co:mc,deals:allDeals,contacts:allContacts,blocker,blockers,relDeals};
 }
-
 function renderValidate(cid,name,domain,r){
   const fmt=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
   const hl=(id,type,label)=>`<a class="vl" href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank">${label}</a>`;
   const blockers=r.blockers||[];
-
-  // ✅ Card de veredicto com TODOS os motivos listados quando não pode prospectar
   const verdict=r.can
-    ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60">
-        <div class="vv-icon">✅</div>
-        <div class="vv-title" style="color:#276749">Pode Prospectar</div>
-      </div>`
+    ?`<div class="vv" style="background:#f0fff4;border:3px solid #27ae60"><div class="vv-icon">✅</div><div class="vv-title" style="color:#276749">Pode Prospectar</div></div>`
     :`<div class="vv" style="background:#fff0f0;border:3px solid #e74c3c;text-align:left">
-        <div style="text-align:center;margin-bottom:16px">
-          <div class="vv-icon">❌</div>
-          <div class="vv-title" style="color:#c53030">Não Pode Prospectar</div>
-        </div>
+        <div style="text-align:center;margin-bottom:16px"><div class="vv-icon">❌</div><div class="vv-title" style="color:#c53030">Não Pode Prospectar</div></div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          ${blockers.map((b,i)=>`
-            <div style="background:#fff;border:1px solid #fc8181;border-radius:10px;padding:10px 14px">
-              <div style="font-size:12px;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">
-                ${blockers.length>1?`Motivo ${i+1}`:'Motivo'}
-              </div>
-              <div style="font-size:13px;color:#333;line-height:1.5">${b.msg}</div>
-              ${b.link?`<div style="margin-top:6px">
-                <a class="vl" href="${b.link}" target="_blank">🔗 Ver negócio</a>
-              </div>`:''}
-            </div>`).join('')}
+          ${blockers.map((b,i)=>`<div style="background:#fff;border:1px solid #fc8181;border-radius:10px;padding:10px 14px">
+            <div style="font-size:12px;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${blockers.length>1?`Motivo ${i+1}`:'Motivo'}</div>
+            <div style="font-size:13px;color:#333;line-height:1.5">${b.msg}</div>
+            ${b.link?`<div style="margin-top:6px"><a class="vl" href="${b.link}" target="_blank">🔗 Ver negócio</a></div>`:''}
+          </div>`).join('')}
         </div>
       </div>`;
-
   const reason=r.reason?`<div style="background:#f7f7f7;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;color:#555">${r.reason}</div>`:'';
-  const summary=`<div class="vs">
-    <div class="vs-c"><div class="n">${r.co?1:0}</div><div class="l">EMPRESA</div></div>
-    <div class="vs-c"><div class="n">${r.deals?.length||0}</div><div class="l">NEGÓCIO(S)</div></div>
-    <div class="vs-c"><div class="n">${r.contacts?.length||0}</div><div class="l">CONTATO(S)</div></div>
-  </div>`;
-  const coHtml=r.co?`<div style="margin-bottom:14px">
-    <div class="vst">🏢 Empresa Encontrada</div>
-    <div class="vci"><span style="font-weight:600">${r.co.properties.name||'—'}</span>
-      <span style="display:flex;gap:12px;align-items:center">
-        ${r.co.properties.domain?`<span style="color:#888;font-size:12px">${r.co.properties.domain}</span>`:''}
-        ${hl(r.co.id,'0-2','🔗 Ver')}
-      </span></div></div>`:''  ;
+  const summary=`<div class="vs"><div class="vs-c"><div class="n">${r.co?1:0}</div><div class="l">EMPRESA</div></div><div class="vs-c"><div class="n">${r.deals?.length||0}</div><div class="l">NEGÓCIO(S)</div></div><div class="vs-c"><div class="n">${r.contacts?.length||0}</div><div class="l">CONTATO(S)</div></div></div>`;
+  const coHtml=r.co?`<div style="margin-bottom:14px"><div class="vst">🏢 Empresa Encontrada</div><div class="vci"><span style="font-weight:600">${r.co.properties.name||'—'}</span><span style="display:flex;gap:12px;align-items:center">${r.co.properties.domain?`<span style="color:#888;font-size:12px">${r.co.properties.domain}</span>`:''}${hl(r.co.id,'0-2','🔗 Ver')}</span></div></div>`:'';
   const relDeals=r.relDeals||[];
-  const dealsHtml=relDeals.length?`<div style="margin-bottom:14px">
-    <div class="vst">💼 Negócios nos Pipelines Relevantes</div>
-    ${relDeals.map(d=>{const p=d.properties,sL=(p.status_do_negocio||'').toLowerCase();
-      const sc=sL==='aberto'?'#e17055':sL==='ganho'?'#27ae60':'#888';
-      const sb=sL==='aberto'?'#fff8f6':sL==='ganho'?'#f0fff4':'#f7f7f7';
-      return`<div class="vdi" style="background:${sb};border-color:${sc}44">
-        <div class="vdi-top"><span style="font-weight:700;color:#333">${p.dealname||'—'}</span>
-          <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}44">${p.status_do_negocio||'—'}</span></div>
-        <div class="vdi-meta">
-          <span>📊 ${PN[p.pipeline]||p.pipeline||'—'}</span>
-          ${p.estagio_de_ciclo_de_vida___negocio?`<span>🔄 ${p.estagio_de_ciclo_de_vida___negocio}</span>`:''}
-          ${p.data_de_churn?`<span>🔴 Churn: ${fmt(p.data_de_churn)}</span>`:''}
-          ${p.closedate&&sL==='perdido'?`<span>📅 Fechamento: ${fmt(p.closedate)}</span>`:''}
-        </div>
-        <div>${hl(d.id,'0-3','🔗 Ver negócio')}</div>
-      </div>`;}).join('')}</div>`:'';
-  document.getElementById(cid).innerHTML=`<div style="margin-top:16px">
-    <div style="font-size:13px;color:#888;margin-bottom:12px">Consultado: <strong>${name||domain}</strong>${name&&domain?` • ${domain}`:''}</div>
-    ${verdict}${reason}${summary}${coHtml}${dealsHtml}
-  </div>`;
+  const dealsHtml=relDeals.length?`<div style="margin-bottom:14px"><div class="vst">💼 Negócios nos Pipelines Relevantes</div>${relDeals.map(d=>{const p=d.properties,sL=(p.status_do_negocio||'').toLowerCase();const sc=sL==='aberto'?'#e17055':sL==='ganho'?'#27ae60':'#888';const sb=sL==='aberto'?'#fff8f6':sL==='ganho'?'#f0fff4':'#f7f7f7';return`<div class="vdi" style="background:${sb};border-color:${sc}44"><div class="vdi-top"><span style="font-weight:700;color:#333">${p.dealname||'—'}</span><span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}44">${p.status_do_negocio||'—'}</span></div><div class="vdi-meta"><span>📊 ${PN[p.pipeline]||p.pipeline||'—'}</span>${p.estagio_de_ciclo_de_vida___negocio?`<span>🔄 ${p.estagio_de_ciclo_de_vida___negocio}</span>`:''}${p.data_de_churn?`<span>🔴 Churn: ${fmt(p.data_de_churn)}</span>`:''}${p.closedate&&sL==='perdido'?`<span>📅 Fechamento: ${fmt(p.closedate)}</span>`:''}</div><div>${hl(d.id,'0-3','🔗 Ver negócio')}</div></div>`;}).join('')}</div>`:'';
+  document.getElementById(cid).innerHTML=`<div style="margin-top:16px"><div style="font-size:13px;color:#888;margin-bottom:12px">Consultado: <strong>${name||domain}</strong>${name&&domain?` • ${domain}`:''}</div>${verdict}${reason}${summary}${coHtml}${dealsHtml}</div>`;
 }
-
 async function validateSingle(){
   const name=document.getElementById('v-name').value.trim(),domain=document.getElementById('v-domain').value.trim();
   if(!name&&!domain)return showR('v-result','error','Erro','Informe o nome ou o domínio da empresa.');
@@ -606,8 +614,7 @@ async function validateSingle(){
   catch(e){showR('v-result','error','Erro',e.message);}
   setB('v-btn',false,'🔍 Validar');
 }
-
-// ── FILES ──
+/* ── FILES ── */
 let bulkDR=[],bulkVR=[];
 function parseFile(file,type,cb){
   const ext=file.name.split('.').pop().toLowerCase();
@@ -622,7 +629,6 @@ function handleFile(e,type){
 function parseBT(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(',').map(s=>s.trim());return{empresa:p[0]||'',dominio:p[1]||'',pipeline:p[2]||'',proprietario:p[3]||'',valor:p[4]||'',obs:p[5]||''};});}
 function parseVT(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const[n,d]=l.split(',').map(s=>s.trim());return{name:n||'',domain:d||''};});}
 function upProg(p,done,total){document.getElementById(`${p}-ptxt`).textContent=`${done}/${total}`;document.getElementById(`${p}-pbar`).style.width=`${(done/total)*100}%`;}
-
 function renderTable(id,results,cols){
   const sc=s=>s?.includes('✅')?'#27ae60':s?.includes('⚠️')?'#f39c12':'#e74c3c';
   const chips=['✅','❌','⚠️'].map(e=>{const n=results.filter(r=>(r.status||'').startsWith(e)).length;return n>0?`<span style="background:${sc(e+'x')}18;color:${sc(e+'x')};border:1px solid ${sc(e+'x')}44;border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700">${e} ${n}</span>`:''}).join('');
@@ -645,7 +651,6 @@ function exportT(id){
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Resultados');
   XLSX.writeFile(wb,`resultados_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-
 async function runBulkDeals(){
   const tm=document.getElementById('db-text-area').style.display!=='none';
   const rows=tm?parseBT(document.getElementById('db-list').value):bulkDR;
@@ -670,7 +675,6 @@ async function runBulkDeals(){
   }
   setB('db-btn',false,'💼 Criar Negócios');
 }
-
 async function runBulkValidate(){
   const tm=document.getElementById('vb-text-area').style.display!=='none';
   const rows=tm?parseVT(document.getElementById('vb-list').value):bulkVR;
@@ -682,19 +686,8 @@ async function runBulkValidate(){
     const{name,domain}=rows[i];
     try{
       const r=await doValidate(name,domain);
-      // ✅ MUDANÇA: concatena TODOS os motivos na coluna "Motivo" da tabela em massa
-      const todosMotivos=r.blockers&&r.blockers.length>0
-        ?r.blockers.map((b,i)=>r.blockers.length>1?`${i+1}. ${b.msg}`:b.msg).join(' | ')
-        :(r.reason||'Sem bloqueios ativos');
-      results.push({
-        empresa:name||domain,
-        dominio:domain||'—',
-        status:r.can?'✅ Pode Prospectar':'❌ Não Pode',
-        motivo:todosMotivos,
-        link:r.blockers&&r.blockers.length>0
-          ?r.blockers[0].link||''
-          :(r.co?`https://app.hubspot.com/contacts/${AID}/record/0-2/${r.co.id}`:'')
-      });
+      const todosMotivos=r.blockers&&r.blockers.length>0?r.blockers.map((b,i)=>r.blockers.length>1?`${i+1}. ${b.msg}`:b.msg).join(' | '):(r.reason||'Sem bloqueios ativos');
+      results.push({empresa:name||domain,dominio:domain||'—',status:r.can?'✅ Pode Prospectar':'❌ Não Pode',motivo:todosMotivos,link:r.blockers&&r.blockers.length>0?r.blockers[0].link||'':(r.co?`https://app.hubspot.com/contacts/${AID}/record/0-2/${r.co.id}`:'')});
     }catch(e){results.push({empresa:name||domain,dominio:domain||'—',status:'❌ Erro',motivo:e.message,link:''});}
     upProg('vb',i+1,rows.length);
     renderTable('vb-results',results,[{key:'empresa',label:'Empresa',bold:true,w:28},{key:'dominio',label:'Domínio',w:22},{key:'status',label:'Status',w:22},{key:'motivo',label:'Motivo(s)',w:60,mw:300},{key:'link',label:'Link',w:50}]);
@@ -702,6 +695,354 @@ async function runBulkValidate(){
   setB('vb-btn',false,'🔍 Validar Empresas');
 }
 
+/* ══════════════════════════════════════════════════════
+   CHAT COM O HUB — 100% HubSpot API, sem Claude API
+══════════════════════════════════════════════════════ */
+
+// Cache de owners carregado uma vez
+let _ownersCache=null;
+async function getOwners(){
+  if(_ownersCache)return _ownersCache;
+  try{const d=await hs('GET','/crm/v3/owners/?limit=100');_ownersCache=d.results||[];}catch{_ownersCache=[];}
+  return _ownersCache;
+}
+
+// Mapas de palavras → IDs
+const PIPE_KW={'pré-vendas':['11075625'],'pre-vendas':['11075625'],'inbound':['11075625'],'pré vendas':['11075625'],
+  'vendas':['11066130'],'bdr':['15079182'],'outbound':['15079182'],'cs':['11066999'],'acm':['11066999'],
+  'hunter':['663181378'],'scooto':['15000484'],'parcerias':['11847207'],'self trial':['37990225'],'self-trial':['37990225']};
+const STAGE_KW={'mql':'32547660','novo contato':'32547660','validação':'32547661','conexão':'965485473',
+  'conectado':'963329357','sal':'32547662','qualificação':'32547662','sql':'32547663','reunião agendada':'32547663',
+  'map. necessidade':'32538778','mapeamento':'32538778','solução':'32538779','negociação':'32538780',
+  'contratação':'32538781','ganho':'32538782','perdido':'32538783'};
+
+// Detecta período temporal da pergunta → retorna {after?, before?} em ms
+function detectPeriod(q){
+  const now=new Date();
+  if(q.match(/\bhoje\b/)){const s=new Date(now);s.setHours(0,0,0,0);return{after:s.getTime()};}
+  if(q.match(/essa semana|esta semana/)){const s=new Date(now);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return{after:s.getTime()};}
+  if(q.match(/últimos?\s*7\s*dias?|ultimos?\s*7\s*dias?/)){return{after:now.getTime()-7*86400000};}
+  if(q.match(/últimos?\s*30\s*dias?|ultimos?\s*30\s*dias?/)){return{after:now.getTime()-30*86400000};}
+  if(q.match(/últimos?\s*90\s*dias?|ultimos?\s*90\s*dias?/)){return{after:now.getTime()-90*86400000};}
+  if(q.match(/esse mês|este mês|mês atual|mes atual/)){const s=new Date(now.getFullYear(),now.getMonth(),1);return{after:s.getTime()};}
+  if(q.match(/mês passado|mes passado/)){const s=new Date(now.getFullYear(),now.getMonth()-1,1);const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);return{after:s.getTime(),before:e.getTime()};}
+  if(q.match(/ano passado/)){const s=new Date(now.getFullYear()-1,0,1);const e=new Date(now.getFullYear()-1,11,31,23,59,59);return{after:s.getTime(),before:e.getTime()};}
+  if(q.match(/esse ano|este ano|ano atual/)){const s=new Date(now.getFullYear(),0,1);return{after:s.getTime()};}
+  return null;
+}
+
+// Monta filtros de busca de negócios a partir da pergunta em linguagem natural
+async function buildDealFilters(q){
+  const filters=[];
+  const owners=await getOwners();
+
+  // Pipeline
+  let pipes=[];
+  for(const[kw,ids] of Object.entries(PIPE_KW)){if(q.includes(kw))pipes.push(...ids);}
+  pipes=[...new Set(pipes)];
+  if(pipes.length)filters.push({propertyName:'pipeline',operator:'IN',values:pipes});
+
+  // Etapa
+  for(const[kw,stageId] of Object.entries(STAGE_KW)){
+    if(q.includes(kw)){filters.push({propertyName:'dealstage',operator:'EQ',value:stageId});break;}
+  }
+
+  // Status
+  if(q.match(/\baberto[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Aberto'});
+  else if(q.match(/\bganho[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Ganho'});
+  else if(q.match(/\bperdido[s]?\b/))filters.push({propertyName:'status_do_negocio',operator:'EQ',value:'Perdido'});
+
+  // ICP
+  if(q.match(/\bpme\b/))filters.push({propertyName:'icp',operator:'EQ',value:'PME'});
+  else if(q.match(/\bge\b|\bgrande[s]? empresa[s]?\b/))filters.push({propertyName:'icp',operator:'EQ',value:'GE'});
+  else if(q.match(/\bgov\b|\bgoverno\b|\bpúblico\b/))filters.push({propertyName:'icp',operator:'EQ',value:'GOV'});
+
+  // Proprietário — busca pelo nome/sobrenome na lista de owners
+  const ownerMatch=owners.find(o=>{
+    const full=`${o.firstName||''} ${o.lastName||''}`.toLowerCase();
+    const parts=full.split(' ').filter(p=>p.length>2);
+    return parts.some(p=>q.includes(p));
+  });
+  if(ownerMatch)filters.push({propertyName:'hubspot_owner_id',operator:'EQ',value:String(ownerMatch.id)});
+
+  // Período
+  const period=detectPeriod(q);
+  if(period){
+    // Para ganhos/perdidos usa closedate, para outros usa createdate
+    const isClosedQuery=q.match(/ganho[s]?|perdido[s]?|fechado[s]?|venda[s]?\s+(do|no|de)/);
+    const dateField=isClosedQuery?'closedate':'createdate';
+    if(period.after)filters.push({propertyName:dateField,operator:'GTE',value:String(period.after)});
+    if(period.before)filters.push({propertyName:dateField,operator:'LTE',value:String(period.before)});
+  }
+
+  return{filters,ownerMatch,pipes,period};
+}
+
+// Busca negócios com os filtros montados
+async function fetchDeals(filters,limit=200){
+  const props=['dealname','pipeline','dealstage','status_do_negocio','hubspot_owner_id','amount','closedate','icp','createdate','estagio_de_ciclo_de_vida___negocio'];
+  const body={filterGroups:filters.length?[{filters}]:[{}],properties:props,limit:Math.min(limit,200),sorts:[{propertyName:'createdate',direction:'DESCENDING'}]};
+  const d=await hs('POST','/crm/v3/objects/deals/search',body);
+  return{results:d.results||[],total:d.total||0};
+}
+
+// Busca contatos
+async function fetchContacts(q,limit=50){
+  const filters=[];
+  const period=detectPeriod(q);
+  if(period){
+    if(period.after)filters.push({propertyName:'createdate',operator:'GTE',value:String(period.after)});
+    if(period.before)filters.push({propertyName:'createdate',operator:'LTE',value:String(period.before)});
+  }
+  const body={filterGroups:filters.length?[{filters}]:[{}],properties:['firstname','lastname','email','company','createdate','estagio_de_ciclo_de_vida___contato','hs_lead_status'],limit,sorts:[{propertyName:'createdate',direction:'DESCENDING'}]};
+  const d=await hs('POST','/crm/v3/objects/contacts/search',body);
+  return{results:d.results||[],total:d.total||0};
+}
+
+// Detecta intenção da pergunta
+function detectIntent(q){
+  if(q.match(/contato[s]?|lead[s]?/))return'contacts';
+  if(q.match(/empresa[s]?|account[s]?|company/))return'companies';
+  if(q.match(/etapa[s]?|estágio[s]?|stage[s]?|por etapa|distribuição/))return'deals_by_stage';
+  if(q.match(/icp|porte|pme|ge\b|gov\b/))return'deals_by_icp';
+  if(q.match(/proprietário[s]?|vendedor[s]?|sdr[s]?|bdr[s]?|dono|responsável|ranking/))return'deals_by_owner';
+  if(q.match(/pipeline[s]?|funil|visão geral|resumo|overview/))return'pipeline_overview';
+  return'deals_list';
+}
+
+// Formata valor em R$
+const fmtBRL=v=>v?`R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}`:'—';
+const fmtDate=v=>v?new Date(parseInt(v)||v).toLocaleDateString('pt-BR'):'—';
+const hsLink=(id,type,label)=>`<a href="https://app.hubspot.com/contacts/${AID}/record/${type}/${id}" target="_blank" style="color:#7c3aed;font-weight:600;font-size:11px">${label}</a>`;
+
+// Renderiza resposta visual baseada nos dados buscados
+function buildReply(q,intent,deals,total,owners,ownerMatch,pipes,period){
+  const pipeNames=pipes.length?pipes.map(p=>PIPES[p]?.label||p).join(', '):'todos os pipelines';
+  const statusTag=(s)=>{
+    const c=s==='Aberto'?'#e17055':s==='Ganho'?'#27ae60':'#888';
+    return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${s}</span>`;
+  };
+  const icpTag=(icp)=>{
+    if(!icp)return'';
+    const c=icp==='PME'?'#3b82f6':icp==='GE'?'#8b5cf6':'#f59e0b';
+    return`<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${icp}</span>`;
+  };
+
+  // Cabeçalho contextual
+  let ctx='';
+  if(ownerMatch)ctx+=`👤 <strong>${ownerMatch.firstName} ${ownerMatch.lastName}</strong> · `;
+  ctx+=`📊 <strong>${pipeNames}</strong>`;
+  if(period)ctx+=` · 📅 período filtrado`;
+
+  // ── INTENT: visão geral de pipeline ──
+  if(intent==='pipeline_overview'){
+    const byPipe={};
+    deals.forEach(d=>{const p=d.properties.pipeline;if(!byPipe[p])byPipe[p]={label:PIPES[p]?.label||p,aberto:0,ganho:0,perdido:0,total:0};byPipe[p][d.properties.status_do_negocio?.toLowerCase()||'total']++;byPipe[p].total++;});
+    const rows=Object.values(byPipe).map(p=>`<tr><td><strong>${p.label}</strong></td><td style="text-align:center"><span style="color:#e17055;font-weight:700">${p.aberto}</span></td><td style="text-align:center"><span style="color:#27ae60;font-weight:700">${p.ganho}</span></td><td style="text-align:center"><span style="color:#888;font-weight:700">${p.perdido}</span></td><td style="text-align:center;font-weight:700">${p.total}</td></tr>`).join('');
+    const html=`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>
+      <div class="cstats">
+        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
+        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
+        <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Perdido').length}</div><div class="cstat-l">PERDIDOS</div></div>
+        <div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div>
+      </div>
+      <table class="ctable"><thead><tr><th>Pipeline</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return html;
+  }
+
+  // ── INTENT: por etapa ──
+  if(intent==='deals_by_stage'){
+    const byStage={};
+    deals.forEach(d=>{
+      const pipe=d.properties.pipeline,stageId=d.properties.dealstage;
+      const pipeObj=PIPES[pipe];
+      const stageName=pipeObj?.stages.find(s=>s.v===stageId)?.l||stageId||'—';
+      const key=`${pipe}::${stageId}`;
+      if(!byStage[key])byStage[key]={pipeline:PIPES[pipe]?.label||pipe,stage:stageName,count:0,valor:0};
+      byStage[key].count++;
+      byStage[key].valor+=parseFloat(d.properties.amount||0);
+    });
+    const sorted=Object.values(byStage).sort((a,b)=>b.count-a.count);
+    const rows=sorted.map(s=>`<tr><td>${s.pipeline}</td><td><strong>${s.stage}</strong></td><td style="text-align:center;font-weight:700;color:#7c3aed">${s.count}</td><td>${s.valor>0?fmtBRL(s.valor):'—'}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+      <table class="ctable"><thead><tr><th>Pipeline</th><th>Etapa</th><th>Qtd</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // ── INTENT: por ICP ──
+  if(intent==='deals_by_icp'){
+    const byIcp={PME:{count:0,ganho:0,valor:0},GE:{count:0,ganho:0,valor:0},GOV:{count:0,ganho:0,valor:0},'—':{count:0,ganho:0,valor:0}};
+    deals.forEach(d=>{const icp=d.properties.icp||'—';if(!byIcp[icp])byIcp[icp]={count:0,ganho:0,valor:0};byIcp[icp].count++;if(d.properties.status_do_negocio==='Ganho')byIcp[icp].ganho++;byIcp[icp].valor+=parseFloat(d.properties.amount||0);});
+    const rows=Object.entries(byIcp).filter(([,v])=>v.count>0).map(([icp,v])=>`<tr><td>${icpTag(icp)||icp}</td><td style="text-align:center;font-weight:700;color:#7c3aed">${v.count}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
+    const statsHtml=Object.entries(byIcp).filter(([,v])=>v.count>0).map(([icp,v])=>`<div class="cstat"><div class="cstat-n">${v.count}</div><div class="cstat-l">${icp}</div></div>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+      <div class="cstats">${statsHtml}</div>
+      <table class="ctable"><thead><tr><th>ICP</th><th>Total</th><th>Ganhos</th><th>Valor Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // ── INTENT: por proprietário ──
+  if(intent==='deals_by_owner'){
+    const byOwner={};
+    deals.forEach(d=>{
+      const oid=d.properties.hubspot_owner_id;
+      const owner=owners.find(o=>String(o.id)===String(oid));
+      const name=owner?`${owner.firstName||''} ${owner.lastName||''}`.trim():`ID ${oid||'—'}`;
+      if(!byOwner[name])byOwner[name]={count:0,aberto:0,ganho:0,perdido:0,valor:0};
+      byOwner[name].count++;
+      const s=(d.properties.status_do_negocio||'').toLowerCase();
+      if(s==='aberto')byOwner[name].aberto++;
+      else if(s==='ganho'){byOwner[name].ganho++;byOwner[name].valor+=parseFloat(d.properties.amount||0);}
+      else if(s==='perdido')byOwner[name].perdido++;
+    });
+    const sorted=Object.entries(byOwner).sort((a,b)=>b[1].count-a[1].count);
+    const rows=sorted.map(([name,v])=>`<tr><td><strong>${name}</strong></td><td style="text-align:center;color:#e17055;font-weight:700">${v.aberto}</td><td style="text-align:center;color:#27ae60;font-weight:700">${v.ganho}</td><td style="text-align:center;color:#888;font-weight:700">${v.perdido}</td><td>${v.valor>0?fmtBRL(v.valor):'—'}</td></tr>`).join('');
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx} · <strong>${total} negócios</strong></div>
+      <table class="ctable"><thead><tr><th>Proprietário</th><th>Abertos</th><th>Ganhos</th><th>Perdidos</th><th>Valor Ganho</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // ── INTENT: lista de negócios ──
+  if(intent==='deals_list'){
+    if(!deals.length)return`<div style="font-size:13px;color:#555;margin-bottom:8px">${ctx}</div><div style="text-align:center;padding:16px;color:#888;font-size:13px">Nenhum negócio encontrado com esses filtros 🔍</div>`;
+    const stats=`<div class="cstats">
+      <div class="cstat"><div class="cstat-n">${total}</div><div class="cstat-l">TOTAL</div></div>
+      <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Aberto').length}</div><div class="cstat-l">ABERTOS</div></div>
+      <div class="cstat"><div class="cstat-n">${deals.filter(d=>d.properties.status_do_negocio==='Ganho').length}</div><div class="cstat-l">GANHOS</div></div>
+    </div>`;
+    const mostrando=deals.slice(0,15);
+    const lista=mostrando.map(d=>{
+      const p=d.properties;
+      const owner=owners.find(o=>String(o.id)===String(p.hubspot_owner_id));
+      const ownerName=owner?`${owner.firstName||''} ${owner.lastName||''}`.trim():'—';
+      return`<div class="clist-item">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:#1e1b4b;margin-bottom:3px">${p.dealname||'—'}</div>
+          <div style="font-size:11px;color:#888">${PIPES[p.pipeline]?.label||'—'} · ${ownerName} ${p.icp?'· '+p.icp:''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${statusTag(p.status_do_negocio||'—')}
+          ${hsLink(d.id,'0-3','🔗 Ver')}
+        </div>
+      </div>`;
+    }).join('');
+    const mais=total>15?`<div style="text-align:center;font-size:12px;color:#888;margin-top:8px">Mostrando 15 de ${total} negócios</div>`:'';
+    return`<div style="font-size:13px;color:#555;margin-bottom:10px">${ctx}</div>${stats}${lista}${mais}`;
+  }
+
+  // ── INTENT: contatos ──
+  return`<div style="font-size:13px;color:#555">Busca processada. ${total} registro(s) encontrado(s).</div>`;
+}
+
+// Controla o estado de carregamento do chat
+let chatBusy=false;
+
+function nowHM(){return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+
+function addCMsg(role,html){
+  const body=document.getElementById('chat-body');
+  const welcome=document.getElementById('chat-welcome');if(welcome)welcome.remove();
+  const isUser=role==='user';
+  const d=document.createElement('div');
+  d.className=`cmsg${isUser?' cmsg-right':''}`;
+  d.innerHTML=`
+    <div class="cmsg-ico ${isUser?'ico-usr':'ico-bot'}">${isUser?'👤':'🤖'}</div>
+    <div>
+      <div class="cbubble ${isUser?'cbubble-usr':'cbubble-bot'}">${html}</div>
+      <div class="cmsg-time">${nowHM()}</div>
+    </div>`;
+  body.appendChild(d);
+  body.scrollTop=body.scrollHeight;
+}
+
+function addTyping(){
+  const body=document.getElementById('chat-body');
+  const d=document.createElement('div');d.className='cmsg';d.id='chat-typing';
+  d.innerHTML=`<div class="cmsg-ico ico-bot">🤖</div><div><div class="cbubble cbubble-bot"><div class="ctyping"><span></span><span></span><span></span></div></div></div>`;
+  body.appendChild(d);body.scrollTop=body.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('chat-typing');if(t)t.remove();}
+
+async function processChat(question){
+  const q=question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,' ');
+  const owners=await getOwners();
+
+  // Detecta intenção
+  const intent=detectIntent(q);
+
+  // Contatos
+  if(intent==='contacts'){
+    const{results,total}=await fetchContacts(q);
+    if(!results.length)return'Nenhum contato encontrado com esse filtro 🔍';
+    const lista=results.slice(0,12).map(c=>{
+      const p=c.properties;
+      const name=`${p.firstname||''} ${p.lastname||''}`.trim()||'Sem nome';
+      return`<div class="clist-item"><div><div style="font-weight:700;font-size:13px;color:#1e1b4b">${name}</div><div style="font-size:11px;color:#888">${p.email||'—'} · ${p.company||'—'}</div></div>${hsLink(c.id,'0-1','🔗 Ver')}</div>`;
+    }).join('');
+    return`<strong>${total} contato(s) encontrado(s)</strong><br><div style="font-size:11px;color:#888;margin-bottom:8px">Mostrando ${Math.min(12,results.length)}</div>${lista}`;
+  }
+
+  // Negócios (maioria dos intents)
+  const{filters,ownerMatch,pipes,period}=await buildDealFilters(q);
+  const{results,total}=await fetchDeals(filters,200);
+
+  if(!results.length&&!['pipeline_overview','deals_by_stage','deals_by_icp','deals_by_owner'].includes(intent)){
+    return`Nenhum negócio encontrado com esses filtros. Tente reformular a pergunta — por exemplo, especificando o pipeline, status ou período 🔍`;
+  }
+
+  return buildReply(q,intent,results,total,owners,ownerMatch,pipes,period);
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chat-inp');
+  const q=inp.value.trim();
+  if(!q||chatBusy)return;
+  inp.value='';autoGrow(inp);
+  chatBusy=true;
+  document.getElementById('chat-send').disabled=true;
+  document.getElementById('chat-sugs').style.display='none';
+
+  addCMsg('user',q.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  addTyping();
+
+  try{
+    const reply=await processChat(q);
+    removeTyping();
+    addCMsg('bot',reply);
+  }catch(e){
+    removeTyping();
+    addCMsg('bot',`<span style="color:#e74c3c">⚠️ Erro ao buscar dados: ${e.message}</span>`);
+  }
+
+  chatBusy=false;
+  document.getElementById('chat-send').disabled=false;
+  inp.focus();
+}
+
+function clearChat(){
+  const body=document.getElementById('chat-body');
+  body.innerHTML=`<div class="chat-welcome" id="chat-welcome">
+    <div class="wi">🤖</div>
+    <h3>Olá! Sou seu assistente HubSpot</h3>
+    <p>Pergunte qualquer coisa sobre negócios, pipelines, ICPs, proprietários, contatos e empresas.</p>
+    <div class="chat-examples">
+      <div class="chat-ex" onclick="sendEx(this)">📊 Quantos negócios abertos temos no Pré-Vendas?</div>
+      <div class="chat-ex" onclick="sendEx(this)">👤 Negócios abertos do Vitor Quaresma</div>
+      <div class="chat-ex" onclick="sendEx(this)">💰 Vendas ganhas no mês passado por ICP</div>
+      <div class="chat-ex" onclick="sendEx(this)">🎯 Quantos SQLs foram gerados essa semana?</div>
+      <div class="chat-ex" onclick="sendEx(this)">📋 Pipeline de Vendas por etapa</div>
+    </div>
+  </div>`;
+  document.getElementById('chat-sugs').style.display='flex';
+}
+
+function sendEx(el){
+  const txt=el.textContent.replace(/^[^\w]+/,'').trim();
+  document.getElementById('chat-inp').value=txt;
+  sendChat();
+}
+function sendSug(el){document.getElementById('chat-inp').value=el.textContent.trim();sendChat();}
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function autoGrow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+/* ── INIT ── */
 updateStage();updateBulkStage();
 </script>
 </body>
