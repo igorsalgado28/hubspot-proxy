@@ -539,27 +539,32 @@ async function doValidate(name,domain){
   if(!cn&&!cd)throw new Error('Informe o nome ou o domínio da empresa.');
 
   // ── ESTRATÉGIA DUPLA: busca por empresa E por dealname ──
+  // Limpa o nome de caracteres corrompidos (ex: "??" que vêm de encoding errado no Excel)
+  const cnClean=cn.replace(/\?+/g,' ').replace(/\s+/g,' ').trim();
+  // Extrai tokens significativos (palavras com 4+ chars) para busca parcial
+  const cnTokens=cnClean.split(' ').filter(w=>w.length>=4);
+  const searchTerm=cnClean||cn;// usa versão limpa se disponível
+
   // Passo 1: Tenta encontrar a empresa pelo proxy (best effort)
   let mc=null;
   try{
     const params=new URLSearchParams();
-    if(cn)params.set('name',cn);
+    if(searchTerm)params.set('name',searchTerm);
     if(cd&&!isP(cd))params.set('domain',cd);
     const r=await fetch(`${PROXY}?path=find-company&${params.toString()}`);
     const d=await r.json();
     if(d.id)mc={id:d.id,properties:{name:d.name,domain:cd||''}};
   }catch{}
 
-  // Também tenta busca direta da empresa pelo Search API (mais confiável)
-  if(!mc&&cn){
+  // Passo 2: Busca direta pelo Search API com nome limpo
+  if(!mc&&searchTerm&&searchTerm.length>=3){
     try{
       const d=await hs('POST','/crm/v3/objects/companies/search',{
-        filterGroups:[{filters:[{propertyName:'name',operator:'CONTAINS_TOKEN',value:cn}]}],
-        properties:['name','domain'],limit:5
+        filterGroups:[{filters:[{propertyName:'name',operator:'CONTAINS_TOKEN',value:searchTerm}]}],
+        properties:['name','domain'],limit:10
       });
       const results=d.results||[];
-      const cnL=cn.toLowerCase();
-      // Tenta match exato primeiro, depois parcial
+      const cnL=searchTerm.toLowerCase();
       const exact=results.find(c=>(c.properties.name||'').toLowerCase()===cnL);
       const partial=results.find(c=>{
         const n=(c.properties.name||'').toLowerCase();
@@ -570,10 +575,31 @@ async function doValidate(name,domain){
     }catch{}
   }
 
-  // Passo 2: Busca deals diretamente por dealname CONTAINS o nome da empresa
+  // Passo 3: Se ainda não achou e tem tokens, tenta com cada token principal
+  if(!mc&&cnTokens.length>0){
+    for(const token of cnTokens.slice(0,3)){// testa até 3 tokens
+      try{
+        const d=await hs('POST','/crm/v3/objects/companies/search',{
+          filterGroups:[{filters:[{propertyName:'name',operator:'CONTAINS_TOKEN',value:token}]}],
+          properties:['name','domain'],limit:10
+        });
+        const results=d.results||[];
+        // Aceita se o nome da empresa contém o token E o token é suficientemente específico
+        const found=results.find(c=>{
+          const n=(c.properties.name||'').toLowerCase();
+          return n.includes(token.toLowerCase())&&token.length>=5;
+        });
+        if(found){mc={id:found.id,properties:{name:found.properties.name,domain:found.properties.domain||cd||''}};break;}
+      }catch{}
+    }
+  }
+
+  // Passo 4: Busca deals diretamente por dealname CONTAINS o nome da empresa
   // Isso garante encontrar negócios mesmo sem empresa associada
   let allDeals=[];
-  const dealSearchTerms=[cn];
+  const dealSearchTerms=cnClean?[cnClean]:[cn];
+  // Adiciona tokens principais se nome tiver caracteres corrompidos
+  if(cnClean!==cn&&cnTokens.length>0)dealSearchTerms.push(...cnTokens.slice(0,2));
   // Se tiver domínio, adiciona a parte principal como termo de busca
   if(cd&&!isP(cd))dealSearchTerms.push(cd.split('.')[0]);
 
@@ -727,7 +753,12 @@ let bulkDR=[],bulkVR=[];
 function parseFile(file,type,cb){
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){const r=new FileReader();r.onload=e=>{const lines=e.target.result.split('\n').filter(Boolean);cb(lines.slice(1).map(l=>{const c=l.split(',').map(s=>s.replace(/"/g,'').trim());return type==='deal'?{empresa:c[0]||'',dominio:c[1]||'',pipeline:c[2]||'',proprietario:c[3]||'',valor:c[4]||'',obs:c[5]||''}:{name:c[0]||'',domain:c[1]||''}}).filter(r=>type==='deal'?r.empresa:r.name||r.domain));};r.readAsText(file);}
-  else{const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSX.utils.sheet_to_json(ws,{header:1});cb(data.slice(1).map(row=>type==='deal'?{empresa:String(row[0]||'').trim(),dominio:String(row[1]||'').trim(),pipeline:String(row[2]||'').trim(),proprietario:String(row[3]||'').trim(),valor:String(row[4]||'').trim(),obs:String(row[5]||'').trim()}:{name:String(row[0]||'').trim(),domain:String(row[1]||'').trim()}).filter(r=>type==='deal'?r.empresa:r.name||r.domain));};r.readAsArrayBuffer(file);}
+  else{const r=new FileReader();r.onload=e=>{
+    // codepage:1252 garante leitura correta de acentos do Excel brasileiro
+    const wb=XLSX.read(e.target.result,{type:'array',codepage:1252}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+    const cleanStr=s=>String(s||'').replace(/\?+/g,' ').replace(/\s+/g,' ').trim();
+    cb(data.slice(1).map(row=>type==='deal'?{empresa:cleanStr(row[0]),dominio:cleanStr(row[1]),pipeline:cleanStr(row[2]),proprietario:cleanStr(row[3]),valor:cleanStr(row[4]),obs:cleanStr(row[5])}:{name:cleanStr(row[0]),domain:cleanStr(row[1])}).filter(r=>type==='deal'?r.empresa:r.name||r.domain));
+  };r.readAsArrayBuffer(file);}
 }
 function handleFile(e,type){
   const file=e.target.files[0];if(!file)return;
