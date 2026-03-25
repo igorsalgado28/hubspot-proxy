@@ -83,11 +83,63 @@ tr:nth-child(even){background:#fafafa}
 .vl{color:#0984e3;font-weight:600;text-decoration:none}
 .vloading{text-align:center;padding:30px;color:#888;font-size:14px}
 
-/* ── MODE SWITCHER (novo) ── */
-.mode-sw{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.mbtn{padding:13px 10px;border-radius:14px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:800;font-size:13px;cursor:pointer;transition:all .25s;text-align:center}
+/* ── MODE SWITCHER ── */
+.mode-sw{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px}
+.mbtn{padding:12px 6px;border-radius:14px;border:2px solid #e8e8e8;background:#fff;color:#999;font-weight:800;font-size:12px;cursor:pointer;transition:all .25s;text-align:center}
 .mbtn-crm.on{border-color:#FF6B6B;background:#FF6B6B0f;color:#FF6B6B;box-shadow:0 4px 14px #FF6B6B22}
 .mbtn-chat.on{border-color:#7c3aed;background:#7c3aed0f;color:#7c3aed;box-shadow:0 4px 14px #7c3aed22}
+.mbtn-intel.on{border-color:#0891b2;background:#0891b20f;color:#0891b2;box-shadow:0 4px 14px #0891b222}
+
+/* ── INTELIGÊNCIA ── */
+#view-intel{display:none}
+.intel-wrap{background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.09);overflow:hidden}
+.intel-head{padding:18px 22px;background:linear-gradient(135deg,#0891b2,#0e7490);display:flex;align-items:center;gap:12px}
+.intel-head-icon{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.intel-head-title{color:#fff;font-weight:800;font-size:16px}
+.intel-head-sub{color:rgba(255,255,255,.65);font-size:11px;margin-top:2px}
+.intel-body{padding:24px}
+.intel-search-box{display:flex;gap:10px;margin-bottom:6px}
+.intel-search-box input{flex:1;padding:12px 16px;border-radius:12px;border:2px solid #e0f2fe;font-size:14px;font-family:inherit;background:#f0f9ff;outline:none;transition:border .2s}
+.intel-search-box input:focus{border-color:#0891b2}
+.intel-search-btn{padding:12px 20px;border-radius:12px;border:none;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.intel-search-btn:disabled{background:#ddd;cursor:not-allowed}
+.intel-hint{font-size:11px;color:#888;margin-bottom:20px}
+.intel-loading{text-align:center;padding:40px;color:#0891b2;font-size:14px}
+.intel-loading .spin{display:inline-block;animation:spin 1s linear infinite;font-size:24px;margin-bottom:8px}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* Seções de resultado */
+.intel-section{margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid #e0f2fe}
+.intel-section-head{padding:12px 16px;background:#f0f9ff;display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;color:#0e7490;border-bottom:1px solid #e0f2fe}
+.intel-section-body{padding:14px 16px}
+.intel-kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.intel-kv-item{background:#f8fafc;border-radius:8px;padding:8px 12px}
+.intel-kv-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.intel-kv-value{font-size:13px;font-weight:600;color:#1e293b}
+.intel-kv-value a{color:#0891b2;text-decoration:none;font-weight:600}
+.intel-desc{font-size:13px;color:#475569;line-height:1.6;background:#f8fafc;border-radius:8px;padding:12px}
+/* Cards de contato */
+.intel-contact{background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.intel-contact:last-child{margin-bottom:0}
+.intel-contact-left{}
+.intel-contact-name{font-weight:700;font-size:14px;color:#1e293b;margin-bottom:2px}
+.intel-contact-role{font-size:12px;color:#64748b;margin-bottom:4px}
+.intel-contact-dept{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#e0f2fe;color:#0891b2}
+.intel-contact-right{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.intel-contact-link{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s}
+.intel-contact-li{background:#e7f3ff;color:#0077b5}
+.intel-contact-li:hover{background:#cce4f6}
+.intel-contact-email{background:#f0fdf4;color:#16a34a}
+.intel-contact-email:hover{background:#dcfce7}
+/* Tag de departamento */
+.dept-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}
+.dept-rh{background:#fef3c7;color:#d97706}
+.dept-tech{background:#e0f2fe;color:#0891b2}
+.dept-train{background:#f0fdf4;color:#16a34a}
+.dept-mgmt{background:#faf5ff;color:#7c3aed}
+/* Alertas */
+.intel-alert{padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:12px}
+.intel-alert-info{background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1}
+.intel-alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
 
 /* ── CHAT (novo) ── */
 #view-chat{display:none}
@@ -164,6 +216,7 @@ tr:nth-child(even){background:#fafafa}
   <div class="mode-sw">
     <button class="mbtn mbtn-crm on" id="mbtn-crm" onclick="setMode('crm')">⚙️ CRM Manager</button>
     <button class="mbtn mbtn-chat" id="mbtn-chat" onclick="setMode('chat')">💬 Converse com o Hub</button>
+    <button class="mbtn mbtn-intel" id="mbtn-intel" onclick="setMode('intel')">🔍 Inteligência</button>
   </div>
 
   <!-- ══════════════════════════════
@@ -365,6 +418,29 @@ tr:nth-child(even){background:#fafafa}
     </div>
   </div><!-- /view-chat -->
 
+  <!-- ══════════════════════════════
+       VIEW INTELIGÊNCIA (novo)
+  ══════════════════════════════ -->
+  <div id="view-intel">
+    <div class="intel-wrap">
+      <div class="intel-head">
+        <div class="intel-head-icon">🔍</div>
+        <div>
+          <div class="intel-head-title">Inteligência de Empresa</div>
+          <div class="intel-head-sub">Powered by Lusha • Dados de mercado em tempo real</div>
+        </div>
+      </div>
+      <div class="intel-body">
+        <div class="intel-search-box">
+          <input id="intel-input" placeholder="Ex: Nubank, FIAP, Banco do Brasil..." onkeydown="if(event.key==='Enter')runIntel()"/>
+          <button class="intel-search-btn" id="intel-btn" onclick="runIntel()">🔍 Pesquisar</button>
+        </div>
+        <div class="intel-hint">💡 Digite o nome da empresa para buscar dados de mercado, LinkedIn e contatos estratégicos</div>
+        <div id="intel-result"></div>
+      </div>
+    </div>
+  </div><!-- /view-intel -->
+
   <div class="footer">Alura B2B</div>
 </div>
 
@@ -433,8 +509,10 @@ const mkDeal=async(props,coId,ctIds)=>{
 function setMode(m){
   document.getElementById('view-crm').style.display=m==='crm'?'block':'none';
   document.getElementById('view-chat').style.display=m==='chat'?'block':'none';
+  document.getElementById('view-intel').style.display=m==='intel'?'block':'none';
   document.getElementById('mbtn-crm').className='mbtn mbtn-crm'+(m==='crm'?' on':'');
   document.getElementById('mbtn-chat').className='mbtn mbtn-chat'+(m==='chat'?' on':'');
+  document.getElementById('mbtn-intel').className='mbtn mbtn-intel'+(m==='intel'?' on':'');
 }
 
 /* ── UI CRM ── */
@@ -1418,6 +1496,242 @@ function sendEx(el){
 function sendSug(el){document.getElementById('chat-inp').value=el.textContent.trim();sendChat();}
 function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function autoGrow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+
+/* ══════════════════════════════════════════════════════
+   INTELIGÊNCIA DE EMPRESA — Lusha + dados públicos
+══════════════════════════════════════════════════════ */
+const LUSHA_PROXY='https://hubspot-proxy-psi.vercel.app/api/lusha';
+
+// Departamentos estratégicos para pré-vendas B2B
+const STRATEGIC_DEPTS=[
+  'Human Resources','Learning & Development','Training',
+  'Information Technology','Engineering & Technical',
+  'Management','Operations','Education','Organizational Development'
+];
+// Seniority levels: 4=Manager, 5=Director, 6=VP, 7=C-Level
+const STRATEGIC_SENIORITY=[4,5,6,7];
+
+async function lushaCall(action,body){
+  const r=await fetch(`${LUSHA_PROXY}?action=${action}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.message||d.error||`Lusha error ${r.status}`);
+  return d;
+}
+
+function deptTag(dept){
+  const d=(dept||'').toLowerCase();
+  if(d.includes('human')||d.includes('rh')||d.includes('people')||d.includes('talent'))
+    return`<span class="dept-tag dept-rh">👥 RH / Pessoas</span>`;
+  if(d.includes('tech')||d.includes('it')||d.includes('engineer')||d.includes('software')||d.includes('information'))
+    return`<span class="dept-tag dept-tech">💻 Tecnologia</span>`;
+  if(d.includes('learn')||d.includes('train')||d.includes('development')||d.includes('education')||d.includes('organiz'))
+    return`<span class="dept-tag dept-train">🎓 T&D / L&D</span>`;
+  if(d.includes('manag')||d.includes('operation')||d.includes('director')||d.includes('chief')||d.includes('president'))
+    return`<span class="dept-tag dept-mgmt">🏆 Gestão</span>`;
+  return`<span class="dept-tag" style="background:#f1f5f9;color:#64748b">${dept||'—'}</span>`;
+}
+
+function seniorityLabel(s){
+  const map={1:'Trainee/Estagiário',2:'Analista Jr',3:'Analista Pleno/Sr',4:'Gerente/Coordenador',5:'Diretor',6:'VP / Diretor Executivo',7:'C-Level / Sócio'};
+  return map[s]||`Nível ${s}`;
+}
+
+function fmtRevenue(r){
+  if(!r)return'—';
+  if(r>=1e9)return`R$ ${(r/1e9).toFixed(1)}B`;
+  if(r>=1e6)return`R$ ${(r/1e6).toFixed(0)}M`;
+  return`R$ ${r.toLocaleString('pt-BR')}`;
+}
+
+function renderIntelResult(company,contacts){
+  const co=company||{};
+  const props=co.companyInfo||co||{};
+
+  // ── Seção 1: Dados da empresa ──
+  const name=props.name||props.companyName||'—';
+  const industry=props.industry||props.mainIndustry||'—';
+  const size=props.employeeCount||props.size||props.numberOfEmployees||'—';
+  const website=props.website||props.domain||'';
+  const hq=props.hq||props.location||props.city||(props.country?props.country:'—');
+  const founded=props.founded||props.foundedYear||'—';
+  const revenue=props.revenue||props.annualRevenue||null;
+  const description=props.description||props.about||'';
+  const linkedin=props.linkedInUrl||props.linkedin||props.linkedinUrl||'';
+
+  // Card empresa
+  let coHtml=`
+    <div class="intel-section">
+      <div class="intel-section-head">🏢 Dados da Empresa</div>
+      <div class="intel-section-body">
+        <div class="intel-kv">
+          <div class="intel-kv-item"><div class="intel-kv-label">Empresa</div><div class="intel-kv-value">${name}</div></div>
+          <div class="intel-kv-item"><div class="intel-kv-label">Setor / Indústria</div><div class="intel-kv-value">${industry}</div></div>
+          <div class="intel-kv-item"><div class="intel-kv-label">Funcionários</div><div class="intel-kv-value">${typeof size==='object'?`${size.min||''}–${size.max||''}`:size}</div></div>
+          <div class="intel-kv-item"><div class="intel-kv-label">Sede</div><div class="intel-kv-value">${typeof hq==='object'?(hq.city||hq.country||'—'):hq}</div></div>
+          ${founded!=='—'?`<div class="intel-kv-item"><div class="intel-kv-label">Fundada em</div><div class="intel-kv-value">${founded}</div></div>`:''}
+          ${revenue?`<div class="intel-kv-item"><div class="intel-kv-label">Receita Estimada</div><div class="intel-kv-value">${fmtRevenue(revenue)}</div></div>`:''}
+          ${website?`<div class="intel-kv-item"><div class="intel-kv-label">Website</div><div class="intel-kv-value"><a href="https://${website.replace(/^https?:\/\//,'')}" target="_blank">🌐 ${website.replace(/^https?:\/\//,'')}</a></div></div>`:''}
+          ${linkedin?`<div class="intel-kv-item"><div class="intel-kv-label">LinkedIn</div><div class="intel-kv-value"><a href="${linkedin}" target="_blank">💼 Ver perfil</a></div></div>`:''}
+        </div>
+        ${description?`<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sobre a empresa</div><div class="intel-desc">${description}</div></div>`:''}
+      </div>
+    </div>`;
+
+  // ── Seção 2: Contatos estratégicos ──
+  let ctHtml='';
+  if(contacts&&contacts.length>0){
+    const ctCards=contacts.map(c=>{
+      const firstName=c.firstName||'';
+      const lastName=c.lastName||'';
+      const fullName=`${firstName} ${lastName}`.trim()||'—';
+      const title=c.title||c.jobTitle||'—';
+      const dept=c.department||c.departments?.[0]||'';
+      const seniority=c.seniority||0;
+      const liUrl=c.linkedInUrl||c.linkedinUrl||'';
+      const email=c.email||c.workEmail||'';
+
+      return`<div class="intel-contact">
+        <div class="intel-contact-left">
+          <div class="intel-contact-name">${fullName}</div>
+          <div class="intel-contact-role">${title}</div>
+          <div style="margin-top:4px">${deptTag(dept)} <span style="font-size:11px;color:#94a3b8">${seniorityLabel(seniority)}</span></div>
+        </div>
+        <div class="intel-contact-right">
+          ${liUrl?`<a class="intel-contact-link intel-contact-li" href="${liUrl}" target="_blank">💼 LinkedIn</a>`:''}
+          ${email?`<a class="intel-contact-link intel-contact-email" href="mailto:${email}" target="_blank">✉️ ${email}</a>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    ctHtml=`
+      <div class="intel-section">
+        <div class="intel-section-head">👤 Contatos Estratégicos <span style="font-size:11px;font-weight:400;color:#64748b;margin-left:6px">${contacts.length} encontrado(s)</span></div>
+        <div class="intel-section-body">${ctCards}</div>
+      </div>`;
+  } else {
+    ctHtml=`
+      <div class="intel-section">
+        <div class="intel-section-head">👤 Contatos Estratégicos</div>
+        <div class="intel-section-body">
+          <div class="intel-alert intel-alert-warn">⚠️ Nenhum contato estratégico encontrado para esta empresa na base do Lusha. Tente buscar pelo domínio da empresa.</div>
+        </div>
+      </div>`;
+  }
+
+  // ── Seção 3: Inteligência para o pré-vendedor ──
+  const tips=[];
+  if(size){
+    const s=typeof size==='object'?size.max:parseInt(size)||0;
+    if(s>=500)tips.push('🎯 <strong>Grande empresa</strong> — foco em diretores e heads de área. Ciclo de venda mais longo.');
+    else if(s>=50)tips.push('🎯 <strong>Médio porte</strong> — contato direto com gestores tende a funcionar bem.');
+    else tips.push('🎯 <strong>Pequena empresa</strong> — provavelmente o dono ou sócio toma as decisões.');
+  }
+  if(industry){
+    const ind=(industry||'').toLowerCase();
+    if(ind.includes('tech')||ind.includes('software'))tips.push('💡 Setor de tecnologia: abordagem técnica funciona melhor. Mencione integração e API.');
+    if(ind.includes('educ')||ind.includes('ensino'))tips.push('💡 Setor educacional: foco em resultados pedagógicos e custo por aluno.');
+    if(ind.includes('financ')||ind.includes('bank'))tips.push('💡 Setor financeiro: compliance e segurança são prioridade no discurso.');
+    if(ind.includes('health')||ind.includes('saude'))tips.push('💡 Setor de saúde: foco em eficiência operacional e capacitação de equipes.');
+  }
+  tips.push('📋 Use os contatos acima para mapear o caminho até o decisor. Comece pelo RH ou T&D.');
+
+  const tipsHtml=tips.map(t=>`<div style="padding:8px 0;border-bottom:1px solid #e0f2fe;font-size:13px;color:#1e293b">${t}</div>`).join('');
+
+  const intelHtml=`
+    <div class="intel-section">
+      <div class="intel-section-head">🧠 Inteligência para o Pré-Vendedor</div>
+      <div class="intel-section-body">${tipsHtml}</div>
+    </div>`;
+
+  document.getElementById('intel-result').innerHTML=`
+    <div style="margin-top:4px">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:14px">📌 Dados via Lusha • Atualizado em tempo real</div>
+      ${coHtml}${ctHtml}${intelHtml}
+    </div>`;
+}
+
+async function runIntel(){
+  const input=document.getElementById('intel-input').value.trim();
+  if(!input)return;
+  const btn=document.getElementById('intel-btn');
+  btn.disabled=true;btn.textContent='⏳ Buscando...';
+  document.getElementById('intel-result').innerHTML=`
+    <div class="intel-loading">
+      <div class="spin">🔍</div>
+      <div>Buscando dados da empresa no Lusha...</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px">Pode levar alguns segundos</div>
+    </div>`;
+
+  try{
+    // Passo 1: busca empresa pelo nome
+    const searchRes=await lushaCall('company-search',{
+      pages:{page:0,size:5},
+      filters:{companies:{include:{names:[input]}}}
+    });
+
+    const companies=searchRes.companies||[];
+    if(!companies.length){
+      document.getElementById('intel-result').innerHTML=`
+        <div class="intel-alert intel-alert-warn" style="margin-top:16px">
+          ⚠️ Empresa "<strong>${input}</strong>" não encontrada na base do Lusha.<br>
+          <span style="font-size:12px">Tente o nome em inglês ou o domínio da empresa (ex: nubank.com)</span>
+        </div>`;
+      btn.disabled=false;btn.textContent='🔍 Pesquisar';
+      return;
+    }
+
+    const companyId=companies[0].id||companies[0].companyId;
+
+    // Passo 2: enriquece dados da empresa
+    let companyData=companies[0];
+    try{
+      const enrichRes=await lushaCall('company-enrich',{companies:[{id:companyId}]});
+      if(enrichRes.companies&&enrichRes.companies[0])companyData=enrichRes.companies[0];
+    }catch{}
+
+    // Passo 3: busca contatos estratégicos da empresa
+    let contacts=[];
+    try{
+      const contactRes=await lushaCall('contact-search',{
+        pages:{page:0,size:10},
+        filters:{
+          contacts:{include:{
+            departments:STRATEGIC_DEPTS,
+            seniority:STRATEGIC_SENIORITY,
+            existing_data_points:['work_email']
+          }},
+          companies:{include:{ids:[companyId]}}
+        }
+      });
+      const rawContacts=contactRes.contacts||contactRes.data||[];
+      if(rawContacts.length){
+        // Enriquece os contatos para pegar email e LinkedIn
+        try{
+          const enrichCtRes=await lushaCall('contact-enrich',{
+            contacts:rawContacts.slice(0,8).map(c=>({id:c.id||c.contactId}))
+          });
+          contacts=enrichCtRes.contacts||enrichCtRes.data||rawContacts;
+        }catch{contacts=rawContacts;}
+      }
+    }catch{}
+
+    renderIntelResult(companyData,contacts);
+
+  }catch(e){
+    document.getElementById('intel-result').innerHTML=`
+      <div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">
+        ❌ Erro ao buscar dados: ${e.message}<br>
+        <span style="font-size:12px">Verifique se o proxy está ativo e a chave do Lusha é válida.</span>
+      </div>`;
+  }
+
+  btn.disabled=false;btn.textContent='🔍 Pesquisar';
+}
 
 /* ── INIT ── */
 updateStage();updateBulkStage();
