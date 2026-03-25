@@ -1661,20 +1661,57 @@ async function runIntel(){
   const btn=document.getElementById('intel-btn');
   const resultEl=document.getElementById('intel-result');
   btn.disabled=true;btn.textContent='⏳ Buscando...';
-  resultEl.innerHTML=`<div class="intel-loading"><div class="spin">🔍</div><div>Buscando dados da empresa...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">Pode levar alguns segundos</div></div>`;
+  resultEl.innerHTML='<div class="intel-loading"><div class="spin">🔍</div><div>Buscando dados da empresa...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">Pode levar alguns segundos</div></div>';
 
   try{
-    // ── Passo 1: Busca empresa — usa searchText (correto pela doc Lusha) ──
-    const searchRes=await lushaCall('company-search',{
-      pages:{page:0,size:10},
-      filters:{companies:{include:{searchText:input}}}
-    });
+    // ── Passo 1: companies-search — retorna dados ricos diretamente (sem enrich separado) ──
+    const searchRes=await lushaCall('companies-search',{companies:[{name:input}]});
+    // Resposta é objeto indexado: { "uuid": { id, name, domain, description, ... } }
+    const keys=Object.keys(searchRes||{});
+    const companyData=keys.length?searchRes[keys[0]]:null;
 
-    const companies=searchRes.companies||[];
-    if(!companies.length){
-      resultEl.innerHTML=`<div class="intel-alert intel-alert-warn" style="margin-top:16px">⚠️ Empresa "<strong>${input}</strong>" não encontrada na base do Lusha.<br><span style="font-size:12px">Tente o nome exato ou em inglês (ex: "Nu Holdings" para Nubank)</span></div>`;
+    if(!companyData||!companyData.id){
+      resultEl.innerHTML='<div class="intel-alert intel-alert-warn" style="margin-top:16px">⚠️ Empresa "<strong>'+input+'</strong>" não encontrada na base do Lusha.<br><span style="font-size:12px">Tente o nome exato ou em inglês</span></div>';
       btn.disabled=false;btn.textContent='🔍 Pesquisar';return;
     }
+
+    const domain=companyData.domain||companyData.emailDomain||'';
+
+    // ── Passo 2: contact-search por domínio da empresa ──
+    let contacts=[];
+    if(domain){
+      try{
+        const contactRes=await lushaCall('contact-search',{
+          pages:{page:0,size:10},
+          filters:{
+            contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},
+            companies:{include:{domains:[domain]}}
+          }
+        });
+        const rawContacts=contactRes.contacts||contactRes.data||[];
+        const contactRequestId=contactRes.requestId||'';
+        if(rawContacts.length&&contactRequestId){
+          try{
+            const contactIds=rawContacts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);
+            const enrichCtRes=await lushaCall('contact-enrich',{requestId:contactRequestId,contactIds});
+            contacts=enrichCtRes.contacts||rawContacts;
+          }catch(e){contacts=rawContacts;console.warn('Contact enrich:',e.message);}
+        } else {contacts=rawContacts;}
+      }catch(e){console.warn('Contact search:',e.message);}
+    }
+
+    renderIntelResult(companyData,contacts);
+
+  }catch(e){
+    const isRate=e.message&&(e.message.toLowerCase().includes('rate limit')||e.message.includes('429'));
+    const mins=isRate?(()=>{const m=e.message.match(/Reset in (\d+)/i);return m?Math.ceil(m[1]/60):60;})():0;
+    const msg=isRate
+      ?'⏳ <strong>Limite atingido.</strong> Tente novamente em ~'+mins+' min.'
+      :'❌ Erro: '+e.message;
+    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">'+msg+'</div>';
+  }
+  btn.disabled=false;btn.textContent='🔍 Pesquisar';
+}
 
     const requestId=searchRes.requestId||'';
     const companyId=String(companies[0].id||companies[0].companyId||'');
@@ -1713,10 +1750,19 @@ async function runIntel(){
     renderIntelResult(companyData,contacts);
 
   }catch(e){
-    document.getElementById('intel-result').innerHTML=`
-      <div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">
-        ❌ Erro: ${e.message}<br><span style="font-size:12px">Verifique se o proxy Lusha está ativo.</span>
-      </div>`;
+    const isRateLimit=e.message&&(e.message.includes('rate limit')||e.message.includes('429'));
+    const isNotFound=e.message&&(e.message.includes('404')||e.message.includes('not found'));
+    let msg='';
+    if(isRateLimit){
+      const seconds=e.message.match(/Reset in (\d+)/i);
+      const mins=seconds?Math.ceil(parseInt(seconds[1])/60):60;
+      msg=`⏳ <strong>Limite de chamadas atingido.</strong><br>O plano Lusha permite 10 chamadas por hora. Tente novamente em ~${mins} minutos.`;
+    } else if(isNotFound){
+      msg=`🔍 Empresa não encontrada. Tente o nome em inglês ou o domínio (ex: nubank.com.br)`;
+    } else {
+      msg=`❌ Erro: ${e.message}`;
+    }
+    resultEl.innerHTML=`<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">${msg}</div>`;
   }
   btn.disabled=false;btn.textContent='🔍 Pesquisar';
 }
