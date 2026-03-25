@@ -1670,7 +1670,7 @@ async function runIntel(){
   try{
     // Passo 1: busca empresa pelo nome
     const searchRes=await lushaCall('company-search',{
-      pages:{page:0,size:5},
+      pages:{page:0,size:10},
       filters:{companies:{include:{names:[input]}}}
     });
 
@@ -1702,8 +1702,7 @@ async function runIntel(){
         filters:{
           contacts:{include:{
             departments:STRATEGIC_DEPTS,
-            seniority:STRATEGIC_SENIORITY,
-            existing_data_points:['work_email']
+            seniority:STRATEGIC_SENIORITY
           }},
           companies:{include:{ids:[companyId]}}
         }
