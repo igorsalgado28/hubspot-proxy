@@ -4,13 +4,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const LUSHA_KEY = '431634ed-795f-40cc-8398-ae0dc0ec931f';
+  const LUSHA_KEY = 'fe66a1ca-eeef-407b-acbd-0a926105b63a';
   const { action } = req.query;
-  
-  try {
-    let url, body, method = 'POST';
 
-    if (action === 'company-search') {
+  try {
+    let url, body;
+
+    if (action === 'companies-search') {
+      url = 'https://api.lusha.com/v2/company';
+      body = req.body;
+    } else if (action === 'company-search') {
       url = 'https://api.lusha.com/prospecting/company/search';
       body = req.body;
     } else if (action === 'company-enrich') {
@@ -27,7 +30,7 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(url, {
-      method,
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api_key': LUSHA_KEY
