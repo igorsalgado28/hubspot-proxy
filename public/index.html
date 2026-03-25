@@ -1713,60 +1713,6 @@ async function runIntel(){
   btn.disabled=false;btn.textContent='🔍 Pesquisar';
 }
 
-    const requestId=searchRes.requestId||'';
-    const companyId=String(companies[0].id||companies[0].companyId||'');
-
-    // ── Passo 2: Enriquece empresa — usa requestId + companiesIds (estrutura correta) ──
-    let companyData=companies[0];
-    try{
-      const enrichRes=await lushaCall('company-enrich',{requestId,companiesIds:[companyId]});
-      if(enrichRes.companies&&enrichRes.companies[0])companyData=enrichRes.companies[0];
-    }catch(e){console.warn('Company enrich:',e.message);}
-
-    // ── Passo 3: Busca contatos estratégicos filtrados pela empresa ──
-    let contacts=[];
-    try{
-      const contactRes=await lushaCall('contact-search',{
-        pages:{page:0,size:10},
-        filters:{
-          contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},
-          companies:{include:{ids:[companyId]}}
-        }
-      });
-      const rawContacts=contactRes.contacts||[];
-      const contactRequestId=contactRes.requestId||'';
-      if(rawContacts.length&&contactRequestId){
-        // Enriquece contatos — usa requestId + contactIds (estrutura correta da doc)
-        try{
-          const contactIds=rawContacts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);
-          const enrichCtRes=await lushaCall('contact-enrich',{requestId:contactRequestId,contactIds});
-          contacts=enrichCtRes.contacts||rawContacts;
-        }catch(e){contacts=rawContacts;console.warn('Contact enrich:',e.message);}
-      } else {
-        contacts=rawContacts;
-      }
-    }catch(e){console.warn('Contact search:',e.message);}
-
-    renderIntelResult(companyData,contacts);
-
-  }catch(e){
-    const isRateLimit=e.message&&(e.message.includes('rate limit')||e.message.includes('429'));
-    const isNotFound=e.message&&(e.message.includes('404')||e.message.includes('not found'));
-    let msg='';
-    if(isRateLimit){
-      const seconds=e.message.match(/Reset in (\d+)/i);
-      const mins=seconds?Math.ceil(parseInt(seconds[1])/60):60;
-      msg=`⏳ <strong>Limite de chamadas atingido.</strong><br>O plano Lusha permite 10 chamadas por hora. Tente novamente em ~${mins} minutos.`;
-    } else if(isNotFound){
-      msg=`🔍 Empresa não encontrada. Tente o nome em inglês ou o domínio (ex: nubank.com.br)`;
-    } else {
-      msg=`❌ Erro: ${e.message}`;
-    }
-    resultEl.innerHTML=`<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">${msg}</div>`;
-  }
-  btn.disabled=false;btn.textContent='🔍 Pesquisar';
-}
-
 /* ── INIT ── */
 updateStage();updateBulkStage();
 </script>
