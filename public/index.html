@@ -1685,7 +1685,7 @@ async function runIntel(){
           pages:{page:0,size:10},
           filters:{
             contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},
-            companies:{include:{domains:[domain]}}
+            companies:{include:{domains:[domain],names:[companyData.name||input]}}
           }
         });
         const rawContacts=contactRes.contacts||contactRes.data||[];
