@@ -1513,13 +1513,23 @@ const STRATEGIC_DEPTS=[
 const STRATEGIC_SENIORITY=[4,5,6,7];
 
 async function lushaCall(action,body){
-  const r=await fetch(`${LUSHA_PROXY}?action=${action}`,{
+  // companies-search usa GET com query params (resolve problema de body no Vercel)
+  if(action==='companies-search'){
+    const nm=encodeURIComponent((body&&body.companies&&body.companies[0]&&body.companies[0].name)||'');
+    const dm=body&&body.companies&&body.companies[0]&&body.companies[0].domain||'';
+    const url=LUSHA_PROXY+'?action=companies-search&name='+nm+(dm?'&domain='+encodeURIComponent(dm):'');
+    const r=await fetch(url,{method:'GET'});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.message||d.error||'Lusha error '+r.status);
+    return d;
+  }
+  const r=await fetch(LUSHA_PROXY+'?action='+action,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(body)
   });
   const d=await r.json();
-  if(!r.ok)throw new Error(d.message||d.error||`Lusha error ${r.status}`);
+  if(!r.ok)throw new Error(d.message||d.error||'Lusha error '+r.status);
   return d;
 }
 
