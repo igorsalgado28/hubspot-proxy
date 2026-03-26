@@ -1513,23 +1513,31 @@ const STRATEGIC_DEPTS=[
 const STRATEGIC_SENIORITY=[4,5,6,7];
 
 async function lushaCall(action,body){
-  // companies-search usa GET com query params (resolve problema de body no Vercel)
+  let url,options;
   if(action==='companies-search'){
-    const nm=encodeURIComponent((body&&body.companies&&body.companies[0]&&body.companies[0].name)||'');
-    const dm=body&&body.companies&&body.companies[0]&&body.companies[0].domain||'';
-    const url=LUSHA_PROXY+'?action=companies-search&name='+nm+(dm?'&domain='+encodeURIComponent(dm):'');
-    const r=await fetch(url,{method:'GET'});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.message||d.error||'Lusha error '+r.status);
-    return d;
+    // GET com query params — evita problema de body no Vercel
+    const nm=encodeURIComponent((body?.companies?.[0]?.name)||'');
+    url=LUSHA_PROXY+'?action=companies-search&name='+nm;
+    options={method:'GET'};
+  } else if(action==='company-enrich'){
+    // GET com requestId e ids como query params
+    const rId=encodeURIComponent(body?.requestId||'');
+    const cIds=(body?.companiesIds||[]).join(',');
+    url=LUSHA_PROXY+'?action=company-enrich&requestId='+rId+'&ids='+encodeURIComponent(cIds);
+    options={method:'GET'};
+  } else if(action==='contact-enrich'){
+    const rId=encodeURIComponent(body?.requestId||'');
+    const ctIds=(body?.contactIds||[]).join(',');
+    url=LUSHA_PROXY+'?action=contact-enrich&requestId='+rId+'&ids='+encodeURIComponent(ctIds);
+    options={method:'GET'};
+  } else {
+    // contact-search: POST normal
+    url=LUSHA_PROXY+'?action='+action;
+    options={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
   }
-  const r=await fetch(LUSHA_PROXY+'?action='+action,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
+  const r=await fetch(url,options);
   const d=await r.json();
-  if(!r.ok)throw new Error(d.message||d.error||'Lusha error '+r.status);
+  if(!r.ok)throw new Error((Array.isArray(d.message)?d.message[0]:d.message)||d.error||'Lusha error '+r.status);
   return d;
 }
 
