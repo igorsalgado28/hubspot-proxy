@@ -13,20 +13,18 @@ export default async function handler(req, res) {
     let url;
 
     if (action === 'companies-search') {
-      url = 'https://api.lusha.com/v2/company';
+      // Busca por nome via prospecting — usa searchText ou names
+      url = 'https://api.lusha.com/prospecting/company/search';
+    } else if (action === 'company-enrich') {
+      url = 'https://api.lusha.com/prospecting/company/enrich';
     } else if (action === 'contact-search') {
       url = 'https://api.lusha.com/prospecting/contact/search';
     } else if (action === 'contact-enrich') {
       url = 'https://api.lusha.com/prospecting/contact/enrich';
-    } else if (action === 'company-search') {
-      url = 'https://api.lusha.com/prospecting/company/search';
-    } else if (action === 'company-enrich') {
-      url = 'https://api.lusha.com/prospecting/company/enrich';
     } else {
       return res.status(400).json({ error: 'Invalid action: ' + action });
     }
 
-    // Parse body correctly
     let body = req.body;
     if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch(e) {}
