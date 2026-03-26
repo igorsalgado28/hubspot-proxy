@@ -1,3 +1,5 @@
+export const config = { api: { bodyParser: true } };
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -8,37 +10,26 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    let url, body;
+    let url;
 
     if (action === 'companies-search') {
-      // POST /v2/company — enrichment by name/domain, returns rich data directly
-      // Body: { companies: [{name, domain, fqdn}] }
       url = 'https://api.lusha.com/v2/company';
-      body = req.body;
-
     } else if (action === 'contact-search') {
-      // POST /prospecting/contact/search
       url = 'https://api.lusha.com/prospecting/contact/search';
-      body = req.body;
-
     } else if (action === 'contact-enrich') {
-      // POST /prospecting/contact/enrich
-      // Body: { requestId, contactIds: [string] }
       url = 'https://api.lusha.com/prospecting/contact/enrich';
-      body = req.body;
-
     } else if (action === 'company-search') {
-      // POST /prospecting/company/search
       url = 'https://api.lusha.com/prospecting/company/search';
-      body = req.body;
-
     } else if (action === 'company-enrich') {
-      // POST /prospecting/company/enrich
       url = 'https://api.lusha.com/prospecting/company/enrich';
-      body = req.body;
-
     } else {
       return res.status(400).json({ error: 'Invalid action: ' + action });
+    }
+
+    // Parse body correctly
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
     }
 
     const response = await fetch(url, {
@@ -50,7 +41,10 @@ export default async function handler(req, res) {
       body: JSON.stringify(body)
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
+
     return res.status(response.status).json(data);
 
   } catch (err) {
