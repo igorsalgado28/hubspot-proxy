@@ -11,22 +11,34 @@ export default async function handler(req, res) {
     let url, body;
 
     if (action === 'companies-search') {
+      // POST /v2/company — enrichment by name/domain, returns rich data directly
+      // Body: { companies: [{name, domain, fqdn}] }
       url = 'https://api.lusha.com/v2/company';
       body = req.body;
-    } else if (action === 'company-search') {
-      url = 'https://api.lusha.com/prospecting/company/search';
-      body = req.body;
-    } else if (action === 'company-enrich') {
-      url = 'https://api.lusha.com/prospecting/company/enrich';
-      body = req.body;
+
     } else if (action === 'contact-search') {
+      // POST /prospecting/contact/search
       url = 'https://api.lusha.com/prospecting/contact/search';
       body = req.body;
+
     } else if (action === 'contact-enrich') {
+      // POST /prospecting/contact/enrich
+      // Body: { requestId, contactIds: [string] }
       url = 'https://api.lusha.com/prospecting/contact/enrich';
       body = req.body;
+
+    } else if (action === 'company-search') {
+      // POST /prospecting/company/search
+      url = 'https://api.lusha.com/prospecting/company/search';
+      body = req.body;
+
+    } else if (action === 'company-enrich') {
+      // POST /prospecting/company/enrich
+      url = 'https://api.lusha.com/prospecting/company/enrich';
+      body = req.body;
+
     } else {
-      return res.status(400).json({ error: 'Invalid action' });
+      return res.status(400).json({ error: 'Invalid action: ' + action });
     }
 
     const response = await fetch(url, {
@@ -40,6 +52,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     return res.status(response.status).json(data);
+
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
