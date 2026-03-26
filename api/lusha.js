@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
     if (action === 'companies-search') {
       // Busca por nome via prospecting — usa searchText ou names
-      url = 'https://api.lusha.com/prospecting/company/search';
+      url = 'https://api.lusha.com/v2/company';
     } else if (action === 'company-enrich') {
       url = 'https://api.lusha.com/prospecting/company/enrich';
     } else if (action === 'contact-search') {
