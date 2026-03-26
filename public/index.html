@@ -1655,44 +1655,58 @@ function renderIntelResult(company,contacts){
     </div>`;
 }
 
-async function runIntel(){  const input=document.getElementById('intel-input').value.trim();  if(!input)return;  const btn=document.getElementById('intel-btn');  const resultEl=document.getElementById('intel-result');  btn.disabled=true;btn.textContent='⏳ Buscando...';  resultEl.innerHTML='<div class="intel-loading"><div class="spin">🔍</div><div>Buscando dados da empresa...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">Pode levar alguns segundos</div></div>';  try{    // Passo 1: prospecting company search por nome (searchText)    const searchRes=await lushaCall('companies-search',{      pages:{page:0,size:10},      filters:{companies:{include:{searchText:input}}}    });    const rawCompanies=searchRes.companies||[];    if(!rawCompanies.length){      resultEl.innerHTML='<div class="intel-alert intel-alert-warn" style="margin-top:16px">⚠️ Empresa "<strong>'+input+'</strong>" não encontrada na base do Lusha.<br><span style="font-size:12px">Tente o nome exato ou em inglês</span></div>';      btn.disabled=false;btn.textContent='🔍 Pesquisar';return;    }    const requestId=searchRes.requestId||'';    const companyId=String(rawCompanies[0].id||rawCompanies[0].companyId||'');    // Passo 2: enrich para pegar dados completos    let companyData=rawCompanies[0];    if(requestId&&companyId){      try{        const enrichRes=await lushaCall('company-enrich',{requestId,companiesIds:[companyId]});        if(enrichRes.companies&&enrichRes.companies[0])companyData=enrichRes.companies[0];      }catch(e){console.warn('Enrich:',e.message);}    }    const domain=companyData.domain||companyData.emailDomain||'';    // Passo 3: busca contatos estratégicos por domínio    let contacts=[];    if(domain){      try{        const contactRes=await lushaCall('contact-search',{          pages:{page:0,size:10},          filters:{            contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},            companies:{include:{domains:[domain],names:[companyData.name||input]}}          }        });        const rawContacts=contactRes.contacts||[];        const contactRequestId=contactRes.requestId||'';        if(rawContacts.length&&contactRequestId){          try{            const contactIds=rawContacts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);            const enrichCtRes=await lushaCall('contact-enrich',{requestId:contactRequestId,contactIds});            contacts=enrichCtRes.contacts||rawContacts;          }catch(e){contacts=rawContacts;console.warn('Contact enrich:',e.message);}        }else{contacts=rawContacts;}      }catch(e){console.warn('Contact search:',e.message);}    }    renderIntelResult(companyData,contacts);  }catch(e){    const isRate=e.message&&(e.message.toLowerCase().includes('rate limit')||e.message.includes('429'));    const mins=isRate?(()=>{const m=e.message.match(/Reset in (\d+)/i);return m?Math.ceil(parseInt(m[1])/60):60;})():0;    const msg=isRate?'⏳ <strong>Limite atingido.</strong> Tente em ~'+mins+' min.':'❌ Erro: '+e.message;    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">'+msg+'</div>';  }  btn.disabled=false;btn.textContent='🔍 Pesquisar';}
-    const domain=companyData.domain||companyData.emailDomain||'';
-
-    // ── Passo 2: contact-search por domínio da empresa ──
+async function runIntel(){
+  const input=document.getElementById('intel-input').value.trim();
+  if(!input)return;
+  const btn=document.getElementById('intel-btn');
+  const resultEl=document.getElementById('intel-result');
+  btn.disabled=true;
+  btn.textContent='⏳ Buscando...';
+  resultEl.innerHTML='<div class="intel-loading"><div class="spin">🔍</div><div>Buscando dados da empresa...</div></div>';
+  try{
+    // companies-search via /v2/company — retorna { uuid: {dados completos} }
+    const res=await lushaCall('companies-search',{companies:[{name:input}]});
+    const vals=Object.values(res||{});
+    if(!vals.length||!vals[0].id){
+      resultEl.innerHTML='<div class="intel-alert intel-alert-warn" style="margin-top:16px">⚠️ Empresa "<strong>'+input+'</strong>" não encontrada.<br><span style="font-size:12px">Tente o nome exato ou em inglês</span></div>';
+      btn.disabled=false;
+      btn.textContent='🔍 Pesquisar';
+      return;
+    }
+    const co=vals[0];
+    const domain=co.domain||co.emailDomain||'';
     let contacts=[];
     if(domain){
       try{
-        const contactRes=await lushaCall('contact-search',{
+        const ctRes=await lushaCall('contact-search',{
           pages:{page:0,size:10},
           filters:{
             contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},
-            companies:{include:{domains:[domain],names:[companyData.name||input]}}
+            companies:{include:{domains:[domain]}}
           }
         });
-        const rawContacts=contactRes.contacts||contactRes.data||[];
-        const contactRequestId=contactRes.requestId||'';
-        if(rawContacts.length&&contactRequestId){
+        const rawCts=ctRes.contacts||[];
+        const ctReqId=ctRes.requestId||'';
+        if(rawCts.length&&ctReqId){
           try{
-            const contactIds=rawContacts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);
-            const enrichCtRes=await lushaCall('contact-enrich',{requestId:contactRequestId,contactIds});
-            contacts=enrichCtRes.contacts||rawContacts;
-          }catch(e){contacts=rawContacts;console.warn('Contact enrich:',e.message);}
-        } else {contacts=rawContacts;}
-      }catch(e){console.warn('Contact search:',e.message);}
+            const ctIds=rawCts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);
+            const enr=await lushaCall('contact-enrich',{requestId:ctReqId,contactIds:ctIds});
+            contacts=enr.contacts||rawCts;
+          }catch(e){contacts=rawCts;}
+        }else{
+          contacts=rawCts;
+        }
+      }catch(e){console.warn('contacts:',e.message);}
     }
-
-    renderIntelResult(companyData,contacts);
-
+    renderIntelResult(co,contacts);
   }catch(e){
-    const isRate=e.message&&(e.message.toLowerCase().includes('rate limit')||e.message.includes('429'));
-    const mins=isRate?(()=>{const m=e.message.match(/Reset in (\d+)/i);return m?Math.ceil(m[1]/60):60;})():0;
-    const msg=isRate
-      ?'⏳ <strong>Limite atingido.</strong> Tente novamente em ~'+mins+' min.'
-      :'❌ Erro: '+e.message;
-    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">'+msg+'</div>';
+    const isRate=(e.message||'').toLowerCase().includes('rate limit')||e.message.includes('429');
+    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">'+(isRate?'⏳ Limite atingido. Tente em alguns minutos.':'❌ Erro: '+e.message)+'</div>';
   }
-  btn.disabled=false;btn.textContent='🔍 Pesquisar';
+  btn.disabled=false;
+  btn.textContent='🔍 Pesquisar';
 }
+
 
 /* ── INIT ── */
 updateStage();updateBulkStage();
