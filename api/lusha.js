@@ -5,55 +5,39 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const LUSHA_KEY = 'fe66a1ca-eeef-407b-acbd-0a926105b63a';
-  const { action } = req.query;
-
-  // Lê o body manualmente via stream (garante leitura em qualquer contexto Vercel)
-  async function readBody(req) {
-    return new Promise((resolve) => {
-      if (req.body && typeof req.body === 'object') {
-        resolve(req.body);
-        return;
-      }
-      let data = '';
-      req.on('data', chunk => { data += chunk.toString(); });
-      req.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { resolve({}); }
-      });
-      req.on('error', () => resolve({}));
-    });
-  }
-
-  if (action === 'debug') {
-    const body = await readBody(req);
-    return res.status(200).json({ body, bodyType: typeof body, raw: JSON.stringify(body) });
-  }
+  const { action, name, domain } = req.query;
 
   try {
-    const body = await readBody(req);
-    let url;
-    let payload = body;
+    let url, payload;
 
     if (action === 'companies-search') {
+      // Usa query params para evitar problema de body parsing no Vercel
+      // name e domain vêm como ?name=Nubank&action=companies-search
       url = 'https://api.lusha.com/v2/company';
-      // Limpa o body — só name, domain, fqdn. NUNCA id (causa erro "must be a string")
-      if (payload.companies) {
-        payload = {
-          companies: payload.companies.map(c => {
-            const obj = {};
-            if (c.name) obj.name = String(c.name);
-            if (c.domain) obj.domain = String(c.domain);
-            if (c.fqdn) obj.fqdn = String(c.fqdn);
-            return obj;
-          })
-        };
-      }
+      const co = {};
+      if (name) co.name = String(name);
+      if (domain) co.domain = String(domain);
+      payload = { companies: [co] };
+
     } else if (action === 'contact-search') {
       url = 'https://api.lusha.com/prospecting/contact/search';
+      // Body ainda vem via POST para contact-search (tem filtros complexos)
+      let body = '';
+      await new Promise(r => {
+        req.on('data', c => body += c);
+        req.on('end', r);
+      });
+      try { payload = JSON.parse(body); } catch(e) { payload = {}; }
+
     } else if (action === 'contact-enrich') {
       url = 'https://api.lusha.com/prospecting/contact/enrich';
-    } else if (action === 'company-enrich') {
-      url = 'https://api.lusha.com/prospecting/company/enrich';
+      let body = '';
+      await new Promise(r => {
+        req.on('data', c => body += c);
+        req.on('end', r);
+      });
+      try { payload = JSON.parse(body); } catch(e) { payload = {}; }
+
     } else {
       return res.status(400).json({ error: 'Invalid action: ' + action });
     }
