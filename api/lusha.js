@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const LUSHA_KEY = 'fe66a1ca-eeef-407b-acbd-0a926105b63a';
+  const LUSHA_KEY = 'd3c8b02d-5d40-4cbb-889e-35e0cd9f20ec';
   const { action, name, domain, requestId, ids, page } = req.query;
 
   try {
