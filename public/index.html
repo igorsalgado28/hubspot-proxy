@@ -1673,59 +1673,128 @@ function renderIntelResult(company,contacts){
     </div>`;
 }
 
+
+function renderIntelResultFromClaude(co){
+  const fmtList=arr=>(arr||[]).map(i=>`<span style="display:inline-block;background:#e0f2fe;color:#0891b2;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin:2px">${i}</span>`).join('');
+  const deptColor=d=>{const dl=(d||'').toLowerCase();return dl.includes('rh')||dl.includes('pesso')||dl.includes('human')?'#d97706':dl.includes('tech')||dl.includes('ti')||dl.includes('tec')?'#0891b2':dl.includes('t&d')||dl.includes('train')||dl.includes('aprend')?'#16a34a':'#7c3aed';};
+  const deptLabel=d=>{const dl=(d||'').toLowerCase();return dl.includes('rh')||dl.includes('pesso')||dl.includes('human')?'👥 RH / Pessoas':dl.includes('tech')||dl.includes('ti')||dl.includes('tec')?'💻 Tecnologia':dl.includes('t&d')||dl.includes('train')||dl.includes('aprend')?'🎓 T&D / L&D':'🏆 Gestão';};
+
+  // Empresa
+  const coHtml=`<div class="intel-section">
+    <div class="intel-section-head">🏢 Dados da Empresa</div>
+    <div class="intel-section-body">
+      <div class="intel-kv">
+        <div class="intel-kv-item"><div class="intel-kv-label">Empresa</div><div class="intel-kv-value">${co.nome||'—'}</div></div>
+        <div class="intel-kv-item"><div class="intel-kv-label">Setor</div><div class="intel-kv-value">${co.setor||'—'}</div></div>
+        <div class="intel-kv-item"><div class="intel-kv-label">Funcionários</div><div class="intel-kv-value">${co.funcionarios||'—'}</div></div>
+        <div class="intel-kv-item"><div class="intel-kv-label">Sede</div><div class="intel-kv-value">${co.sede||'—'}</div></div>
+        ${co.fundacao?`<div class="intel-kv-item"><div class="intel-kv-label">Fundada em</div><div class="intel-kv-value">${co.fundacao}</div></div>`:''}
+        ${co.receita?`<div class="intel-kv-item"><div class="intel-kv-label">Receita Estimada</div><div class="intel-kv-value">${co.receita}</div></div>`:''}
+        ${co.website?`<div class="intel-kv-item"><div class="intel-kv-label">Website</div><div class="intel-kv-value"><a href="https://${co.website.replace(/^https?:\/\//,'')}" target="_blank">🌐 ${co.website}</a></div></div>`:''}
+        ${co.linkedin?`<div class="intel-kv-item"><div class="intel-kv-label">LinkedIn</div><div class="intel-kv-value"><a href="${co.linkedin}" target="_blank">💼 Ver empresa</a></div></div>`:''}
+      </div>
+      ${co.descricao?`<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sobre</div><div class="intel-desc">${co.descricao}</div></div>`:''}
+      ${co.especialidades&&co.especialidades.length?`<div style="margin-top:10px">${fmtList(co.especialidades)}</div>`:''}
+    </div>
+  </div>`;
+
+  // Contatos
+  let ctHtml='';
+  if(co.contatos&&co.contatos.length){
+    const cards=co.contatos.map(c=>`<div class="intel-contact">
+      <div class="intel-contact-left">
+        <div class="intel-contact-name">${c.nome||'—'}</div>
+        <div class="intel-contact-role">${c.cargo||'—'}</div>
+        <div style="margin-top:4px"><span class="dept-tag" style="background:${deptColor(c.departamento)}22;color:${deptColor(c.departamento)}">${deptLabel(c.departamento)}</span></div>
+      </div>
+      <div class="intel-contact-right">
+        ${c.linkedin?`<a class="intel-contact-link intel-contact-li" href="${c.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        ${c.email?`<a class="intel-contact-link intel-contact-email" href="mailto:${c.email}" target="_blank">✉️ Email</a>`:''}
+      </div>
+    </div>`).join('');
+    ctHtml=`<div class="intel-section"><div class="intel-section-head">👤 Contatos Estratégicos <span style="font-size:11px;font-weight:400;color:#64748b;margin-left:6px">${co.contatos.length} encontrado(s)</span></div><div class="intel-section-body">${cards}</div></div>`;
+  } else {
+    ctHtml=`<div class="intel-section"><div class="intel-section-head">👤 Contatos Estratégicos</div><div class="intel-section-body"><div class="intel-alert intel-alert-warn">⚠️ Nenhum contato estratégico encontrado publicamente para esta empresa.</div></div></div>`;
+  }
+
+  // Intel para pré-vendedor
+  const tips=(co.intel_prevendedor||[]).map(t=>`<div style="padding:8px 0;border-bottom:1px solid #e0f2fe;font-size:13px;color:#1e293b">💡 ${t}</div>`).join('');
+  const intelHtml=`<div class="intel-section"><div class="intel-section-head">🧠 Inteligência para o Pré-Vendedor</div><div class="intel-section-body">${tips||'<span style="color:#94a3b8;font-size:13px">Sem insights disponíveis.</span>'}</div></div>`;
+
+  document.getElementById('intel-result').innerHTML=`<div style="margin-top:4px"><div style="font-size:12px;color:#94a3b8;margin-bottom:14px">📌 Dados via IA + fontes públicas • Pesquisado em tempo real</div>${coHtml}${ctHtml}${intelHtml}</div>`;
+}
+
 async function runIntel(){
   const input=document.getElementById('intel-input').value.trim();
   if(!input)return;
   const btn=document.getElementById('intel-btn');
   const resultEl=document.getElementById('intel-result');
-  btn.disabled=true;
-  btn.textContent='⏳ Buscando...';
-  resultEl.innerHTML='<div class="intel-loading"><div class="spin">🔍</div><div>Buscando dados da empresa...</div></div>';
+  btn.disabled=true;btn.textContent='⏳ Buscando...';
+  resultEl.innerHTML='<div class="intel-loading"><div class="spin">🔍</div><div>Buscando inteligência sobre a empresa...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">Analisando dados de mercado e contatos estratégicos</div></div>';
   try{
-    // companies-search via /v2/company — retorna { uuid: {dados completos} }
-    const res=await lushaCall('companies-search',{companies:[{name:input}]});
-    const vals=Object.values(res||{});
-    if(!vals.length||!vals[0].id){
-      resultEl.innerHTML='<div class="intel-alert intel-alert-warn" style="margin-top:16px">⚠️ Empresa "<strong>'+input+'</strong>" não encontrada.<br><span style="font-size:12px">Tente o nome exato ou em inglês</span></div>';
-      btn.disabled=false;
-      btn.textContent='🔍 Pesquisar';
-      return;
+    // Usa Claude API com web search para buscar inteligência da empresa
+    const prompt=`Você é um assistente de inteligência comercial B2B especializado no mercado brasileiro.
+Pesquise dados atualizados sobre a empresa: "${input}"
+
+Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem explicações):
+{
+  "nome": "Nome oficial da empresa",
+  "setor": "Setor/indústria principal",
+  "funcionarios": "Faixa de funcionários (ex: 1.000-5.000)",
+  "sede": "Cidade, Estado, País",
+  "fundacao": "Ano de fundação",
+  "website": "dominio.com.br",
+  "linkedin": "https://linkedin.com/company/nome",
+  "descricao": "Descrição em 2-3 frases sobre o que a empresa faz, seu posicionamento e foco",
+  "receita": "Faixa de receita anual estimada (ex: R$ 500M - R$ 1B)",
+  "especialidades": ["área1", "área2", "área3"],
+  "contatos": [
+    {
+      "nome": "Nome Sobrenome",
+      "cargo": "Cargo completo",
+      "departamento": "RH|Tecnologia|T&D|Gestão|Operações",
+      "linkedin": "https://linkedin.com/in/perfil",
+      "email": "email@empresa.com ou vazio"
     }
-    const co=vals[0];
-    const domain=co.domain||co.emailDomain||'';
-    let contacts=[];
-    if(domain){
-      try{
-        const ctRes=await lushaCall('contact-search',{
-          pages:{page:0,size:10},
-          filters:{
-            contacts:{include:{departments:STRATEGIC_DEPTS,seniority:STRATEGIC_SENIORITY}},
-            companies:{include:{domains:[domain]}}
-          }
-        });
-        const rawCts=ctRes.contacts||[];
-        const ctReqId=ctRes.requestId||'';
-        if(rawCts.length&&ctReqId){
-          try{
-            const ctIds=rawCts.slice(0,8).map(c=>String(c.id||c.contactId||'')).filter(Boolean);
-            const enr=await lushaCall('contact-enrich',{requestId:ctReqId,contactIds:ctIds});
-            contacts=enr.contacts||rawCts;
-          }catch(e){contacts=rawCts;}
-        }else{
-          contacts=rawCts;
-        }
-      }catch(e){console.warn('contacts:',e.message);}
-    }
-    renderIntelResult(co,contacts);
-  }catch(e){
-    const isRate=(e.message||'').toLowerCase().includes('rate limit')||e.message.includes('429');
-    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">'+(isRate?'⏳ Limite atingido. Tente em alguns minutos.':'❌ Erro: '+e.message)+'</div>';
-  }
-  btn.disabled=false;
-  btn.textContent='🔍 Pesquisar';
+  ],
+  "intel_prevendedor": [
+    "Insight 1 estratégico para abordagem comercial",
+    "Insight 2 sobre o perfil da empresa",
+    "Insight 3 sobre como abordar"
+  ]
 }
 
+Para os contatos: busque pessoas reais em cargos estratégicos como: Diretor/Head de RH, Head de T&D, CTO, CHRO, Diretor de Operações, VP de Pessoas, Gerente de Treinamento. Foque em perfis seniores (Gerente para cima).
+Se não encontrar dados específicos, use o que está disponível publicamente. Nunca invente nomes de pessoas.`;
 
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await resp.json();
+    if(!resp.ok)throw new Error(data.error?.message||'Claude API error');
+
+    // Extrai o texto da resposta
+    const textBlock=data.content.find(b=>b.type==='text');
+    if(!textBlock)throw new Error('Sem resposta da IA');
+
+    let raw=textBlock.text.trim();
+    // Remove markdown se houver
+    raw=raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const co=JSON.parse(raw);
+    renderIntelResultFromClaude(co);
+
+  }catch(e){
+    resultEl.innerHTML='<div class="intel-alert" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-top:16px">❌ Erro: '+e.message+'</div>';
+  }
+  btn.disabled=false;btn.textContent='🔍 Pesquisar';
+}
 /* ── INIT ── */
 updateStage();updateBulkStage();
 </script>
