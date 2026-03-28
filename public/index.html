@@ -248,10 +248,25 @@ tr:nth-child(even){background:#fafafa}
             </select>
           </div>
           <div class="ib ib-blue">📌 Etapa obrigatória: <strong id="d-stage-label">Novo Contato (MQL)</strong></div>
-          <div class="fg"><label>Proprietário</label><input id="d-owner" placeholder="Ex: fulano@alura.com.br"/><span class="hint">Deixe vazio para usar o padrão</span></div>
+          <div class="fg"><label>Proprietário</label><input id="d-owner" placeholder="Ex: Igor Salgado ou igor@alura.com.br"/><span class="hint">Nome ou e-mail do proprietário. Deixe vazio para usar o padrão.</span></div>
+          <div class="fg"><label>Local de Conversão</label>
+            <select id="d-local-conversao">
+              <option value="">— Selecione —</option>
+              <option value="chatbot">Chatbot</option>
+              <option value="formulário">Formulário</option>
+              <option value="evento">Evento</option>
+              <option value="landing page">Landing Page</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Blip">Blip</option>
+              <option value="indicação">Indicação</option>
+              <option value="ligação">Ligação</option>
+              <option value="e-mail">E-mail</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="prospecção ativa">Prospecção Ativa</option>
+              <option value="parceria">Parceria</option>
+            </select>
+            <span class="hint">Como o lead chegou até você</span></div>
           <div class="fg"><label>Empresa / Domínio</label><input id="d-company" placeholder="Ex: BTG Pactual ou btgpactual.com"/></div>
-          <div class="fg"><label>ID da Empresa no HubSpot</label><input id="d-company-id" placeholder="Ex: 8987233824 (opcional — garante associação)"/><span class="hint">Cole o ID da empresa para associar com 100% de certeza</span></div>
-          <div class="fg"><label>Valor (R$)</label><input id="d-amount" type="number" placeholder="25000"/></div>
           <div class="fg"><label>Observações</label><textarea id="d-obs" rows="3" placeholder="Notas..."></textarea></div>
           <button class="btn btn-red" id="d-btn" onclick="createDeal()">💼 Criar Negócio</button>
           <div id="d-result"></div>
@@ -560,18 +575,22 @@ async function createDeal(){
   setB('d-btn',true,'');
   try{
     const pipe=document.getElementById('d-pipe').value,p=PIPES[pipe];
-    const owner=document.getElementById('d-owner').value.trim();
+    // Proprietário: busca por nome ou email usando findOwner
+    const ownerInput=document.getElementById('d-owner').value.trim();
+    const ownerId=await findOwner(ownerInput);
     const companyField=document.getElementById('d-company').value.trim();
     const domain=(companyField.includes('.')?companyField:'').replace(/^@/,'').trim();
     const searchName=companyField&&!companyField.includes('.')?companyField:name;
-    const ownerId=await findOwner(owner);
     const coId=await findCo(searchName,domain);
     const ctIds=domain&&!isP(domain)?await findCtsByDomain(domain):[];
+    const localConversao=document.getElementById('d-local-conversao').value.trim();
+    const obs=document.getElementById('d-obs').value;
     const props={dealname:name,pipeline:pipe,dealstage:p.ds,status_do_negocio:'Aberto',hubspot_owner_id:ownerId};
-    const amt=document.getElementById('d-amount').value,obs=document.getElementById('d-obs').value;
-    if(amt)props.amount=amt;if(obs)props.description=obs;
+    if(localConversao)props.local_de_conversao_unico=localConversao;
+    if(obs)props.description=obs;
     const id=await mkDeal(props,coId,ctIds);
-    showR('d-result','success','Negócio criado!',`Pipeline: ${p.label}\nEtapa: ${p.dl}`,`https://app.hubspot.com/contacts/${AID}/record/0-3/${id}`);
+    showR('d-result','success','Negócio criado!',`Pipeline: ${p.label}
+Etapa: ${p.dl}`,`https://app.hubspot.com/contacts/${AID}/record/0-3/${id}`);
   }catch(e){showR('d-result','error','Erro',e.message);}
   setB('d-btn',false,'💼 Criar Negócio');
 }
@@ -1797,6 +1816,30 @@ Se não encontrar dados específicos, use o que está disponível publicamente. 
 }
 /* ── INIT ── */
 updateStage();updateBulkStage();
+// Carrega opções reais da propriedade local_de_conversao_unico do HubSpot
+(async()=>{
+  try{
+    // Busca propriedade diretamente via fetch ao proxy
+    const encoded=encodeURIComponent('crm/v3/properties/deals/local_de_conversao_unico');
+    const r=await fetch(`${PROXY}?path=${encoded}`,{method:'GET',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    const opts=d.options||[];
+    if(!opts.length)return;
+    const sel=document.getElementById('d-local-conversao');
+    if(!sel)return;
+    sel.innerHTML='<option value="">— Selecione —</option>';
+    opts
+      .filter(o=>!o.hidden)
+      .sort((a,b)=>(a.displayOrder||0)-(b.displayOrder||0))
+      .forEach(o=>{
+        const opt=document.createElement('option');
+        opt.value=o.value;
+        opt.textContent=o.label||o.value;
+        sel.appendChild(opt);
+      });
+  }catch(e){console.warn('Local conversao opts:',e.message);}
+})();
+
 </script>
 </body>
 </html>
