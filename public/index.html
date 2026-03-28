@@ -288,6 +288,7 @@ tr:nth-child(even){background:#fafafa}
             </div>
             <div class="fg"><label>Etapa</label><select id="db-stage"></select></div>
             <div class="fg"><label>Proprietário padrão</label><input id="db-owner" placeholder="fulano@alura.com.br (opcional)"/><span class="hint">Pode ser sobrescrito por linha</span></div>
+            <div class="fg"><label>Local de Conversão padrão</label><select id="db-local-conversao"><option value="">— Selecione (opcional) —</option></select><span class="hint">Aplicado a todos os negócios criados em massa</span></div>
           </div>
           <div id="db-text-area">
             <div class="fg"><label>Lista de Empresas</label>
@@ -893,6 +894,7 @@ async function runBulkDeals(){
   if(!rows.length)return alert('Nenhuma empresa para processar.');
   setB('db-btn',true,'');
   const pId=document.getElementById('db-pipe').value,sId=document.getElementById('db-stage').value,oBase=document.getElementById('db-owner').value.trim()||DO;
+  const localConversaoBase=document.getElementById('db-local-conversao').value;
   const pInfo=PIPES[pId];
   document.getElementById('db-prog').style.display='block';upProg('db',0,rows.length);
   const results=[];
@@ -902,7 +904,8 @@ async function runBulkDeals(){
       const oId=await findOwner(r.proprietario||oBase),coId=await findCo(r.empresa,r.dominio);
       const ctIds=r.dominio&&!isP(r.dominio)?await findCtsByDomain(r.dominio):[];
       const props={dealname:r.empresa,pipeline:aP.id||pId,dealstage:sId,status_do_negocio:'Aberto',hubspot_owner_id:oId};
-      if(r.valor)props.amount=r.valor;if(r.obs)props.description=r.obs;
+      if(localConversaoBase)props.local_de_conversao_unico=localConversaoBase;
+      if(r.obs)props.description=r.obs;
       const id=await mkDeal(props,coId,ctIds);
       results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'✅ Criado',link:`https://app.hubspot.com/contacts/${AID}/record/0-3/${id}`});
     }catch(e){results.push({empresa:r.empresa,dominio:r.dominio||'—',pipeline:aP.label,status:'❌ Erro',link:'',motivo:e.message});}
@@ -1825,18 +1828,21 @@ updateStage();updateBulkStage();
     const d=await r.json();
     const opts=d.options||[];
     if(!opts.length)return;
-    const sel=document.getElementById('d-local-conversao');
-    if(!sel)return;
-    sel.innerHTML='<option value="">— Selecione —</option>';
-    opts
-      .filter(o=>!o.hidden)
-      .sort((a,b)=>(a.displayOrder||0)-(b.displayOrder||0))
-      .forEach(o=>{
-        const opt=document.createElement('option');
-        opt.value=o.value;
-        opt.textContent=o.label||o.value;
-        sel.appendChild(opt);
-      });
+    // Popula ambos os selects: individual e em massa
+    for(const selId of['d-local-conversao','db-local-conversao']){
+      const sel=document.getElementById(selId);
+      if(!sel)continue;
+      sel.innerHTML=selId==='d-local-conversao'?'<option value="">— Selecione —</option>':'<option value="">— Selecione (opcional) —</option>';
+      opts
+        .filter(o=>!o.hidden)
+        .sort((a,b)=>(a.displayOrder||0)-(b.displayOrder||0))
+        .forEach(o=>{
+          const opt=document.createElement('option');
+          opt.value=o.value;
+          opt.textContent=o.label||o.value;
+          sel.appendChild(opt);
+        });
+    }
   }catch(e){console.warn('Local conversao opts:',e.message);}
 })();
 
