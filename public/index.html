@@ -490,7 +490,25 @@ const hs=async(m,path,body)=>{
 const findOwner=async v=>{
   if(!v||!v.trim())return DO;
   if(/^\d+$/.test(v))return v;
-  try{const d=await hs('GET','/crm/v3/owners/?limit=100');const f=(d.results||[]).find(o=>o.email?.toLowerCase()===v.toLowerCase()||`${o.firstName} ${o.lastName}`.toLowerCase().includes(v.toLowerCase()));return f?String(f.id):DO;}catch{return DO;}
+  try{
+    // limit=500 + includeDeactivated para garantir encontrar todos os owners
+    const d=await hs('GET','/crm/v3/owners/?limit=500&includeDeactivated=true');
+    const results=d.results||[];
+    // 1. Match por email exato
+    const byEmail=results.find(o=>o.email?.toLowerCase()===v.toLowerCase());
+    if(byEmail)return String(byEmail.id);
+    // 2. Match por nome completo exato
+    const byName=results.find(o=>`${o.firstName||''} ${o.lastName||''}`.toLowerCase().trim()===v.toLowerCase().trim());
+    if(byName)return String(byName.id);
+    // 3. Match parcial por nome
+    const byPartial=results.find(o=>`${o.firstName||''} ${o.lastName||''}`.toLowerCase().includes(v.toLowerCase()));
+    if(byPartial)return String(byPartial.id);
+    // Não encontrou — lança erro explícito em vez de usar ID padrão silenciosamente
+    throw new Error(`Proprietário "${v}" não encontrado. Verifique o nome ou e-mail.`);
+  }catch(e){
+    if(e.message&&e.message.includes('não encontrado'))throw e;
+    return DO;
+  }
 };
 const findCo=async(name,domain)=>{
   if(!name&&!domain)return null;
